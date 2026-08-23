@@ -1,0 +1,6 @@
+{
+  "name": "JARVIS OS",
+  "description": "Native Android AI Assistant with voice interaction, Gemini intelligence, memory matrix, autonomous agent planner, and extensible tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
