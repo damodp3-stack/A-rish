@@ -87,6 +87,7 @@ data class SubTask(
     val title: String,
     val description: String = "",
     val toolRequired: String? = null,
+    val toolArgs: Map<String, String>? = null,
     val status: TaskStatus = TaskStatus.PENDING,
     val output: String? = null,
     val error: String? = null

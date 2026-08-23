@@ -320,8 +320,9 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
 
     fun createAgentTask(goal: String) {
         viewModelScope.launch {
-            val task = agentOrchestrator.createAndPlanTask(goal)
-            agentOrchestrator.executeTask(task.id)
+            val key = uiState.value.customApiKey
+            val task = agentOrchestrator.createAndPlanTask(goal, key)
+            agentOrchestrator.executeTask(task.id, key)
         }
     }
 

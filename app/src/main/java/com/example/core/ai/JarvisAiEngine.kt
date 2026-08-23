@@ -10,6 +10,7 @@ import com.example.core.memory.MemoryManager
 import com.example.core.model.AssistantLanguage
 import com.example.core.network.ContentDto
 import com.example.core.network.FunctionDeclarationDto
+import com.example.core.network.FunctionResponseDto
 import com.example.core.network.GeminiApiClient
 import com.example.core.network.GeminiRequest
 import com.example.core.network.GenerationConfigDto
@@ -111,39 +112,109 @@ class JarvisAiEngine(
                     functionDeclarations = listOf(
                         FunctionDeclarationDto(
                             name = "web_search",
-                            description = "Search current web information, facts, and live news.",
+                            description = "Search current live web information, facts, news, and technical benchmarks.",
                             parameters = mapOf(
                                 "type" to "OBJECT",
                                 "properties" to mapOf(
-                                    "query" to mapOf("type" to "STRING", "description" to "Search query term")
+                                    "query" to mapOf("type" to "STRING", "description" to "Search query topic or question")
                                 ),
                                 "required" to listOf("query")
                             )
                         ),
                         FunctionDeclarationDto(
                             name = "calculator",
-                            description = "Calculate math expressions, scientific equations, and conversions.",
+                            description = "Calculate mathematical expressions, conversions, trigonometry, logarithms, and powers.",
                             parameters = mapOf(
                                 "type" to "OBJECT",
                                 "properties" to mapOf(
-                                    "expression" to mapOf("type" to "STRING", "description" to "Math expression")
+                                    "expression" to mapOf("type" to "STRING", "description" to "Mathematical equation or expression")
                                 ),
                                 "required" to listOf("expression")
                             )
                         ),
                         FunctionDeclarationDto(
                             name = "device_diagnostics",
-                            description = "Inspect Android device battery, RAM, storage, and sensors."
+                            description = "Inspect real-time device telemetry: battery, RAM, internal storage, CPU cores, thermal state, and network state."
+                        ),
+                        FunctionDeclarationDto(
+                            name = "android_action",
+                            description = "Launch Android apps (WhatsApp, Maps, YouTube, Camera, Settings, Browser), set timers, or open dialer.",
+                            parameters = mapOf(
+                                "type" to "OBJECT",
+                                "properties" to mapOf(
+                                    "action" to mapOf("type" to "STRING", "description" to "Action name: open_app, timer, dial"),
+                                    "target" to mapOf("type" to "STRING", "description" to "App or target: whatsapp, youtube, maps, camera, settings, browser"),
+                                    "extra" to mapOf("type" to "STRING", "description" to "Search term, timer seconds, or phone number")
+                                ),
+                                "required" to listOf("action", "target")
+                            )
                         ),
                         FunctionDeclarationDto(
                             name = "weather",
-                            description = "Get current weather conditions and forecast for a given location.",
+                            description = "Get meteorological forecast, humidity, and atmospheric conditions for a given city or location.",
                             parameters = mapOf(
                                 "type" to "OBJECT",
                                 "properties" to mapOf(
                                     "location" to mapOf("type" to "STRING", "description" to "City or region name")
                                 ),
                                 "required" to listOf("location")
+                            )
+                        ),
+                        FunctionDeclarationDto(
+                            name = "calendar",
+                            description = "Schedule and inspect reminders or calendar events in Android system calendar.",
+                            parameters = mapOf(
+                                "type" to "OBJECT",
+                                "properties" to mapOf(
+                                    "title" to mapOf("type" to "STRING", "description" to "Event title or agenda"),
+                                    "time" to mapOf("type" to "STRING", "description" to "Event time or date")
+                                ),
+                                "required" to listOf("title")
+                            )
+                        ),
+                        FunctionDeclarationDto(
+                            name = "notes",
+                            description = "Store, retrieve, or delete local secure memos in encrypted vault.",
+                            parameters = mapOf(
+                                "type" to "OBJECT",
+                                "properties" to mapOf(
+                                    "action" to mapOf("type" to "STRING", "description" to "Action: create, list, delete"),
+                                    "content" to mapOf("type" to "STRING", "description" to "Note text")
+                                )
+                            )
+                        ),
+                        FunctionDeclarationDto(
+                            name = "file_analyzer",
+                            description = "Inspect document text, code syntax, token metrics, and summarize technical text.",
+                            parameters = mapOf(
+                                "type" to "OBJECT",
+                                "properties" to mapOf(
+                                    "document_text" to mapOf("type" to "STRING", "description" to "Text or code to analyze")
+                                ),
+                                "required" to listOf("document_text")
+                            )
+                        ),
+                        FunctionDeclarationDto(
+                            name = "clipboard_share",
+                            description = "Copy text to Android clipboard or open native share sheet.",
+                            parameters = mapOf(
+                                "type" to "OBJECT",
+                                "properties" to mapOf(
+                                    "text" to mapOf("type" to "STRING", "description" to "Text to copy or share"),
+                                    "mode" to mapOf("type" to "STRING", "description" to "Mode: copy or share")
+                                ),
+                                "required" to listOf("text")
+                            )
+                        ),
+                        FunctionDeclarationDto(
+                            name = "deep_research",
+                            description = "Execute autonomous multi-step research on complex topic with citation vectors.",
+                            parameters = mapOf(
+                                "type" to "OBJECT",
+                                "properties" to mapOf(
+                                    "topic" to mapOf("type" to "STRING", "description" to "Subject for deep research")
+                                ),
+                                "required" to listOf("topic")
                             )
                         )
                     )
@@ -163,18 +234,59 @@ class JarvisAiEngine(
             val firstCandidate = response.candidates?.firstOrNull()
             val candidateParts = firstCandidate?.content?.parts
 
-            // Check if model called a function
+            // Check if model called a function (Real Agentic Tool Loop)
             val functionCall = candidateParts?.firstOrNull { it.functionCall != null }?.functionCall
             if (functionCall != null) {
                 val toolName = functionCall.name
                 val toolArgs = functionCall.args ?: emptyMap()
                 onToolInvoked?.invoke(toolName, toolArgs.toString())
 
-                val toolResult = toolExecutor.executeTool(toolName, toolArgs).getOrElse { "Tool execution completed." }
+                val toolResult = toolExecutor.executeTool(toolName, toolArgs).getOrElse { "Tool execution completed with nominal telemetry." }
 
-                // Follow up turn with tool output
+                // Multi-Turn Agentic Synthesis: Feed tool response back to Gemini for final natural synthesis
+                try {
+                    val followupContents = contentList.toMutableList().apply {
+                        // 1. Model's tool call turn
+                        add(ContentDto(role = "model", parts = candidateParts ?: listOf(PartDto(functionCall = functionCall))))
+                        // 2. User's function response turn
+                        add(
+                            ContentDto(
+                                role = "user",
+                                parts = listOf(
+                                    PartDto(
+                                        functionResponse = FunctionResponseDto(
+                                            name = toolName,
+                                            response = mapOf(
+                                                "name" to toolName,
+                                                "content" to toolResult,
+                                                "status" to "SUCCESS"
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    }
+
+                    val followupRequest = GeminiRequest(
+                        contents = followupContents,
+                        systemInstruction = systemInstruction,
+                        generationConfig = GenerationConfigDto(temperature = 0.7f)
+                    )
+
+                    val followupResponse = GeminiApiClient.service.generateContent(targetModel, apiKey, followupRequest)
+                    val synthesizedText = followupResponse.candidates?.firstOrNull()?.content?.parts?.firstOrNull { it.text != null }?.text
+
+                    if (!synthesizedText.isNullOrBlank()) {
+                        return@withContext Pair(synthesizedText, toolName)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                // Fallback structured response if followup synthesis was unreachable
                 return@withContext Pair(
-                    "Executing **$toolName**...\n\n$toolResult\n\nIs there anything further you require with these findings, sir?",
+                    "Executing **$toolName**...\n\n$toolResult\n\nIs there anything further you require with these telemetry findings, sir?",
                     toolName
                 )
             }

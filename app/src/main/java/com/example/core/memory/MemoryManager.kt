@@ -22,9 +22,26 @@ class MemoryManager(private val memoryDao: MemoryDao) {
         importance: Int = 3,
         source: String = "User Manual Input"
     ): Long = withContext(Dispatchers.IO) {
+        val trimmedKey = key.trim()
+        val trimmedValue = value.trim()
+        
+        // Deduplicate: check if a memory with exact same key exists and update it
+        val existing = memoryDao.searchMemories(trimmedKey).firstOrNull { it.key.equals(trimmedKey, ignoreCase = true) }
+        if (existing != null) {
+            val updated = existing.copy(
+                value = trimmedValue,
+                category = category.name,
+                importance = importance.coerceIn(1, 5),
+                source = source,
+                createdAt = System.currentTimeMillis()
+            )
+            memoryDao.updateMemory(updated)
+            return@withContext existing.id
+        }
+
         val entity = MemoryEntity(
-            key = key.trim(),
-            value = value.trim(),
+            key = trimmedKey,
+            value = trimmedValue,
             category = category.name,
             importance = importance.coerceIn(1, 5),
             source = source
@@ -33,20 +50,19 @@ class MemoryManager(private val memoryDao: MemoryDao) {
     }
 
     suspend fun getRelevantMemoriesForPrompt(userPrompt: String): String = withContext(Dispatchers.IO) {
-        val words = userPrompt.split(" ").filter { it.length > 3 }
+        val words = userPrompt.split(" ").filter { it.length > 2 }
         val foundMemories = mutableSetOf<MemoryEntity>()
 
-        for (word in words.take(5)) {
+        for (word in words.take(6)) {
             val results = memoryDao.searchMemories(word)
             foundMemories.addAll(results)
         }
 
         if (foundMemories.isEmpty()) {
-            // Include top 3 highest importance memories by default
             return@withContext ""
         }
 
-        val formatted = foundMemories.take(5).joinToString("\n") {
+        val formatted = foundMemories.sortedByDescending { it.importance }.take(5).joinToString("\n") {
             "- [${it.category}] ${it.key}: ${it.value}"
         }
 
@@ -62,17 +78,33 @@ class MemoryManager(private val memoryDao: MemoryDao) {
                     saveMemory("User Name", name, MemoryCategory.FACT, importance = 5, source = "Auto-Inferred")
                 }
             }
-            lower.contains("i prefer") || lower.contains("i like") -> {
-                saveMemory("User Preference", userText, MemoryCategory.USER_PREFERENCE, importance = 4, source = "Auto-Inferred")
-            }
-            lower.contains("remember that") || lower.contains("note that") -> {
-                val fact = userText.substringAfter("that").trim()
-                if (fact.isNotBlank()) {
-                    saveMemory("User Note", fact, MemoryCategory.GENERAL, importance = 4, source = "Voice Command")
+            lower.contains("call me") -> {
+                val name = userText.substringAfter("call me").trim().split(" ").firstOrNull() ?: ""
+                if (name.isNotBlank()) {
+                    saveMemory("User Name", name, MemoryCategory.FACT, importance = 5, source = "Auto-Inferred")
                 }
             }
-            lower.contains("working on") || lower.contains("my project is") -> {
+            lower.contains("i prefer") || lower.contains("i like") || lower.contains("always use") -> {
+                saveMemory("User Preference", userText, MemoryCategory.USER_PREFERENCE, importance = 4, source = "Auto-Inferred")
+            }
+            lower.contains("my favorite") -> {
+                val fav = userText.substringAfter("favorite").trim()
+                saveMemory("Favorite Topic", fav, MemoryCategory.USER_PREFERENCE, importance = 3, source = "Auto-Inferred")
+            }
+            lower.contains("remember that") || lower.contains("note that") || lower.contains("remind me") -> {
+                val fact = userText.substringAfter("that", "").substringAfter("me", "").trim()
+                if (fact.isNotBlank()) {
+                    saveMemory("User Memo", fact, MemoryCategory.GENERAL, importance = 4, source = "Voice / Chat")
+                }
+            }
+            lower.contains("working on") || lower.contains("my project is") || lower.contains("developing") -> {
                 saveMemory("Active Project", userText, MemoryCategory.PROJECT, importance = 4, source = "Conversation")
+            }
+            lower.contains("i am in") || lower.contains("i live in") -> {
+                val loc = userText.substringAfter("in").trim().split(" ").firstOrNull() ?: ""
+                if (loc.isNotBlank()) {
+                    saveMemory("User Location", loc, MemoryCategory.FACT, importance = 4, source = "Auto-Inferred")
+                }
             }
         }
     }
