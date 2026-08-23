@@ -185,7 +185,7 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
                 id = UUID.randomUUID().toString(),
                 conversationId = "default_session",
                 role = MessageRole.ASSISTANT.name,
-                content = "Good day, sir. J.A.R.V.I.S. Mobile OS initialized on your OnePlus 15R. Neural cores, audio synthesis, and memory matrices are fully active. How may I facilitate your operations today?",
+                content = "Good day, sir. J.A.R.V.I.S. initialized and ready. How may I facilitate your operations today?",
                 timestamp = System.currentTimeMillis()
             )
             db.messageDao().insertMessage(welcomeMsg)

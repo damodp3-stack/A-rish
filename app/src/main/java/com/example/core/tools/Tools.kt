@@ -125,7 +125,7 @@ class ToolExecutor(private val context: Context) {
 
     // Local in-memory store for user memos during session
     private val localNotesList = mutableListOf(
-        "JARVIS Core protocols initialized on OnePlus 15R.",
+        "JARVIS Core protocols initialized.",
         "Episodic memory matrix synchronized with Room database.",
         "Tamil and English bilingual phonetic models online."
     )
@@ -406,17 +406,17 @@ class ToolExecutor(private val context: Context) {
 
         val cores = Runtime.getRuntime().availableProcessors()
 
+        val deviceModelName = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
+
         return """
-            [JARVIS Hardware & OS Telemetry]
-            - Target Device: OnePlus 15R (Snapdragon 8 Gen Elite)
+            [Hardware & OS Telemetry]
+            - Device: $deviceModelName
             - Android OS: Version ${Build.VERSION.RELEASE} (API Level ${Build.VERSION.SDK_INT})
-            - Battery Level: $batteryLevel% (${if (isCharging) "Fast Charging" else "Discharging"})
-            - Active RAM: ${availableRamGb}GB free of ${totalRamGb}GB total
+            - Battery Level: $batteryLevel% (${if (isCharging) "Charging" else "Discharging"})
+            - Active RAM: ${availableRamGb}GB free / ${totalRamGb}GB total
             - Internal Storage: ${availableStorageGb}GB free / ${totalStorageGb}GB total
             - CPU Compute: $cores Processing Cores Active
             - Network State: $networkType
-            - NPU Accelerator: INT4 Hexagon Core Active (45 TOPS)
-            - Keystore Vault: Hardware-Backed Android TEE Active
         """.trimIndent()
     }
 

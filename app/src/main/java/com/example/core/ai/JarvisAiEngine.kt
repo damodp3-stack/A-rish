@@ -64,12 +64,12 @@ class JarvisAiEngine(
                 parts = listOf(
                     PartDto(
                         text = """
-                            You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), the native Android AI Operating Layer for this OnePlus 15R device.
-                            Persona: Highly intelligent, polite, loyal, sharp, efficient, and proactive.
+                            You are J.A.R.V.I.S., an intelligent, polite, efficient, and proactive AI assistant.
                             $languageDirective
                             $memoryContext
                             Always prioritize direct answers, factual accuracy, and structured clarity.
-                            You have access to tools for web search, calculator, device diagnostics, weather, calendar, and notes. Use them whenever relevant.
+                            You have access to tools for web search, calculator, device diagnostics, weather, calendar, notes, file analysis, clipboard sharing, and deep research. Use them ONLY when explicitly relevant to the user's request.
+                            IMPORTANT PRIVACY & CONTEXT RULE: Do NOT mention or output the user's device model, hardware specifications, RAM, storage, or internal telemetry unless the user explicitly asks about their device or hardware diagnostics.
                         """.trimIndent()
                     )
                 )
@@ -373,21 +373,21 @@ class JarvisAiEngine(
         // 6. Tamil greeting / general query
         if (language == AssistantLanguage.TAMIL || lower.contains("வணக்கம்") || lower.contains("eppadi irukinga") || lower.contains("vanakkam")) {
             return Pair(
-                "வணக்கம் ஐயா! நான் JARVIS, உங்கள் மொபைல் AI உதவியாளர். அனைத்து கணினி அமைப்புகளும் தயார் நிலையில் உள்ளன. நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?",
+                "வணக்கம் ஐயா! நான் JARVIS AI உதவியாளர். உங்களுக்கு எவ்வாறு உதவ முடியும்?",
                 null
             )
         }
 
         if (language == AssistantLanguage.TANGLISH) {
             return Pair(
-                "Vanakkam sir! JARVIS systems are fully operational on this OnePlus device. Text, voice, search, and memory matrix active. Enna pannanum சொல்லுங்க sir?",
+                "Vanakkam sir! JARVIS systems are ready. Text, voice, search, and memory active. Enna pannanum சொல்லுங்க sir?",
                 null
             )
         }
 
         // Default English JARVIS greeting
         return Pair(
-            "At your service, sir. All core protocols on the OnePlus 15R are operating at peak efficiency. I am prepared for autonomous research, tool execution, telemetry inspection, or voice briefing.",
+            "At your service, sir. How may I assist you today?",
             null
         )
     }

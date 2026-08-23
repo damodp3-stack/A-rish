@@ -122,7 +122,7 @@ class MemoryManager(private val memoryDao: MemoryDao) {
     }
 
     suspend fun seedInitialDefaults() = withContext(Dispatchers.IO) {
-        saveMemory("Identity Directive", "JARVIS Mobile Operating Layer - OnePlus 15R Native Protocol", MemoryCategory.IDENTITY, importance = 5, source = "System Genesis")
+        saveMemory("Identity Directive", "JARVIS AI Assistant Core Protocol", MemoryCategory.IDENTITY, importance = 5, source = "System Genesis")
         saveMemory("Bilingual Matrix", "Fluency in English and Tamil (தமிழ்), with tolerant Tanglish interpretation.", MemoryCategory.IDENTITY, importance = 5, source = "System Genesis")
         saveMemory("Safety & Security", "Zero key leakage, hardware-level Keystore isolation, explicit user approval for destructive changes.", MemoryCategory.IDENTITY, importance = 5, source = "Security Vault")
     }
