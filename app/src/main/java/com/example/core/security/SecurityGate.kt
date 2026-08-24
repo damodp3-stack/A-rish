@@ -67,31 +67,67 @@ class SecurityGate(
 
         // 2. Enforce Approval for HIGH and CRITICAL risk operations (even if OS permission is granted)
         if (riskEvaluation.level.requiresExplicitApproval) {
-            if (existingApproval == null || existingApproval.status != ApprovalStatus.APPROVED) {
-                val approvalReq = existingApproval ?: ApprovalRequest(
-                    approvalId = "appr-$taskId-$stepId",
-                    taskId = taskId,
-                    stepId = stepId,
-                    toolId = toolId,
-                    capabilityId = capabilityId,
-                    riskEvaluation = riskEvaluation,
-                    actionSummary = riskEvaluation.explanationText,
-                    previewPayload = emptyMap(),
-                    createdAt = System.currentTimeMillis(),
-                    expiresAt = System.currentTimeMillis() + 60_000L,
-                    status = ApprovalStatus.PENDING
-                )
+            val currentTime = System.currentTimeMillis()
+            val hasValidApprovedApproval = existingApproval != null &&
+                existingApproval.isValidForExecution(currentTime) &&
+                (existingApproval.decision == null || existingApproval.decision.status == ApprovalStatus.APPROVED) &&
+                existingApproval.taskId == taskId &&
+                existingApproval.stepId == stepId &&
+                existingApproval.toolId == toolId &&
+                existingApproval.capabilityId == capabilityId &&
+                existingApproval.riskEvaluation.level == riskEvaluation.level
+
+            if (!hasValidApprovedApproval) {
+                val approvalReq = if (existingApproval != null &&
+                    existingApproval.isPendingValid(currentTime) &&
+                    existingApproval.taskId == taskId &&
+                    existingApproval.stepId == stepId &&
+                    existingApproval.toolId == toolId &&
+                    existingApproval.capabilityId == capabilityId
+                ) {
+                    existingApproval
+                } else {
+                    ApprovalRequest(
+                        approvalId = "appr-$taskId-$stepId",
+                        taskId = taskId,
+                        stepId = stepId,
+                        toolId = toolId,
+                        capabilityId = capabilityId,
+                        riskEvaluation = riskEvaluation,
+                        actionSummary = riskEvaluation.explanationText,
+                        previewPayload = emptyMap(),
+                        createdAt = currentTime,
+                        expiresAt = currentTime + 60_000L,
+                        status = if (existingApproval?.isExpiredAt(currentTime) == true) ApprovalStatus.EXPIRED else ApprovalStatus.PENDING
+                    )
+                }
                 return SecurityGateDecision.RequiresApproval(approvalReq)
             }
         }
 
         // 3. Enforce Authentication Requirement (e.g. USER_CONFIRMATION, BIOMETRIC)
-        val effectiveAuthReq = when {
-            riskEvaluation.level == RiskLevel.CRITICAL && authenticationRequirement == AuthenticationRequirement.NONE ->
-                AuthenticationRequirement.BIOMETRIC
-            riskEvaluation.level == RiskLevel.HIGH && authenticationRequirement == AuthenticationRequirement.NONE ->
-                AuthenticationRequirement.USER_CONFIRMATION
-            else -> authenticationRequirement
+        // INVARIANT: Authentication requirements must NEVER be downgraded.
+        // CRITICAL:
+        //   NONE -> BIOMETRIC
+        //   USER_CONFIRMATION -> BIOMETRIC
+        //   DEVICE_CREDENTIAL -> DEVICE_CREDENTIAL
+        //   BIOMETRIC -> BIOMETRIC
+        // HIGH:
+        //   NONE -> USER_CONFIRMATION
+        //   USER_CONFIRMATION / DEVICE_CREDENTIAL / BIOMETRIC -> allowed
+        val effectiveAuthReq = when (riskEvaluation.level) {
+            RiskLevel.CRITICAL -> when (authenticationRequirement) {
+                AuthenticationRequirement.NONE, AuthenticationRequirement.USER_CONFIRMATION -> AuthenticationRequirement.BIOMETRIC
+                AuthenticationRequirement.DEVICE_CREDENTIAL -> AuthenticationRequirement.DEVICE_CREDENTIAL
+                AuthenticationRequirement.BIOMETRIC -> AuthenticationRequirement.BIOMETRIC
+            }
+            RiskLevel.HIGH -> when (authenticationRequirement) {
+                AuthenticationRequirement.NONE -> AuthenticationRequirement.USER_CONFIRMATION
+                AuthenticationRequirement.USER_CONFIRMATION -> AuthenticationRequirement.USER_CONFIRMATION
+                AuthenticationRequirement.DEVICE_CREDENTIAL -> AuthenticationRequirement.DEVICE_CREDENTIAL
+                AuthenticationRequirement.BIOMETRIC -> AuthenticationRequirement.BIOMETRIC
+            }
+            RiskLevel.MEDIUM, RiskLevel.LOW -> authenticationRequirement
         }
 
         if (effectiveAuthReq != AuthenticationRequirement.NONE) {

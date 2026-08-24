@@ -38,24 +38,36 @@ data class ApprovalRequest(
     val status: ApprovalStatus = ApprovalStatus.PENDING,
     val decision: ApprovalDecision? = null
 ) {
+    fun isExpiredAt(currentTime: Long = System.currentTimeMillis()): Boolean =
+        status == ApprovalStatus.EXPIRED || currentTime >= expiresAt
+
+    fun isPendingValid(currentTime: Long = System.currentTimeMillis()): Boolean =
+        status == ApprovalStatus.PENDING && currentTime < expiresAt
+
+    fun isValidForExecution(currentTime: Long = System.currentTimeMillis()): Boolean =
+        status == ApprovalStatus.APPROVED && currentTime < expiresAt
+
     val isPending: Boolean
-        get() = status == ApprovalStatus.PENDING && System.currentTimeMillis() < expiresAt
+        get() = isPendingValid()
 
     val isExpired: Boolean
-        get() = status == ApprovalStatus.PENDING && System.currentTimeMillis() >= expiresAt
+        get() = isExpiredAt()
 
-    fun approve(decidedBy: String = "USER"): ApprovalRequest = copy(
+    val isValidApproved: Boolean
+        get() = isValidForExecution()
+
+    fun approve(decidedBy: String = "USER", timestamp: Long = System.currentTimeMillis()): ApprovalRequest = copy(
         status = ApprovalStatus.APPROVED,
-        decision = ApprovalDecision(status = ApprovalStatus.APPROVED, decidedBy = decidedBy)
+        decision = ApprovalDecision(status = ApprovalStatus.APPROVED, decidedBy = decidedBy, decidedAt = timestamp)
     )
 
-    fun reject(reason: String? = null): ApprovalRequest = copy(
+    fun reject(reason: String? = null, timestamp: Long = System.currentTimeMillis()): ApprovalRequest = copy(
         status = ApprovalStatus.REJECTED,
-        decision = ApprovalDecision(status = ApprovalStatus.REJECTED, notes = reason)
+        decision = ApprovalDecision(status = ApprovalStatus.REJECTED, decidedAt = timestamp, notes = reason)
     )
 
-    fun expire(): ApprovalRequest = copy(
+    fun expire(timestamp: Long = System.currentTimeMillis()): ApprovalRequest = copy(
         status = ApprovalStatus.EXPIRED,
-        decision = ApprovalDecision(status = ApprovalStatus.EXPIRED, notes = "Approval request timed out")
+        decision = ApprovalDecision(status = ApprovalStatus.EXPIRED, decidedAt = timestamp, notes = "Approval request timed out")
     )
 }

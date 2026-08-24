@@ -21,10 +21,12 @@ import javax.crypto.spec.GCMParameterSpec
  * 3. Tag length is 128 bits.
  * 4. Authentication tag mismatches, tampered ciphertext, or tampered IV produce explicit typed security failures.
  * 5. Key material is never exposed or logged.
+ * 6. NO SILENT IN-MEMORY FALLBACK: If KeyStore fails, operations fail closed.
  */
 class AesGcmCipherEngine(
     private val keyAlias: String = DEFAULT_MASTER_KEY_ALIAS,
-    private val keyStoreProvider: String = ANDROID_KEYSTORE_PROVIDER
+    private val keyStoreProvider: String = ANDROID_KEYSTORE_PROVIDER,
+    private val injectedKeyStore: KeyStore? = null
 ) {
 
     companion object {
@@ -36,7 +38,6 @@ class AesGcmCipherEngine(
     }
 
     private val secureRandom = SecureRandom()
-    private val memoryFallbackKeys = mutableMapOf<String, SecretKey>()
 
     init {
         ensureMasterKeyExists(keyAlias)
@@ -60,10 +61,11 @@ class AesGcmCipherEngine(
 
     /**
      * Decrypts ciphertext bytes using AES-256-GCM and the supplied IV.
-     * Fails closed if the ciphertext is corrupted, tampered, or the wrong key is used.
+     * Fails closed if the ciphertext is corrupted, tampered, or the key is missing/invalid.
+     * Does NOT generate a new replacement key for missing keys during decryption.
      */
     fun decrypt(ciphertext: ByteArray, iv: ByteArray, customKeyAlias: String = keyAlias): ByteArray {
-        val secretKey = getOrCreateSecretKey(customKeyAlias)
+        val secretKey = getExistingSecretKey(customKeyAlias)
         return try {
             val cipher = Cipher.getInstance(TRANSFORMATION)
             val spec = GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv)
@@ -89,41 +91,97 @@ class AesGcmCipherEngine(
         }
     }
 
+    private fun loadKeyStore(): KeyStore {
+        return try {
+            injectedKeyStore ?: KeyStore.getInstance(keyStoreProvider).apply { load(null) }
+        } catch (e: Exception) {
+            throw ArishException.KeystoreOperationException(
+                operation = "loadKeyStore",
+                message = "Failed to load KeyStore provider '$keyStoreProvider': ${e.message}",
+                cause = e
+            )
+        }
+    }
+
     private fun ensureMasterKeyExists(alias: String) {
         getOrCreateSecretKey(alias)
     }
 
-    private fun getOrCreateSecretKey(alias: String): SecretKey {
-        return try {
-            val keyStore = KeyStore.getInstance(keyStoreProvider).apply { load(null) }
-            if (keyStore.containsAlias(alias)) {
-                val entry = keyStore.getEntry(alias, null) as? KeyStore.SecretKeyEntry
-                if (entry != null) {
-                    return entry.secretKey
-                }
-            }
-
-            // Generate new AES-256 key in AndroidKeyStore
-            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, keyStoreProvider)
-            val keyGenSpec = KeyGenParameterSpec.Builder(
-                alias,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+    private fun getExistingSecretKey(alias: String): SecretKey {
+        val keyStore = loadKeyStore()
+        if (!keyStore.containsAlias(alias)) {
+            throw ArishException.KeystoreOperationException(
+                operation = "getExistingSecretKey",
+                message = "Key alias '$alias' does not exist in KeyStore. Cannot decrypt."
             )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
-                .setRandomizedEncryptionRequired(true)
-                .build()
-
-            keyGenerator.init(keyGenSpec)
-            keyGenerator.generateKey()
+        }
+        val entry = try {
+            val protParam = if (injectedKeyStore != null) KeyStore.PasswordProtection(charArrayOf()) else null
+            keyStore.getEntry(alias, protParam) as? KeyStore.SecretKeyEntry
         } catch (e: Exception) {
-            // Fallback for non-AndroidKeyStore environments (e.g. pure unit tests without Android KeyStore service)
-            memoryFallbackKeys.getOrPut(alias) {
-                val fallbackGen = KeyGenerator.getInstance("AES")
-                fallbackGen.init(256, secureRandom)
-                fallbackGen.generateKey()
+            throw ArishException.KeystoreOperationException(
+                operation = "getEntry",
+                message = "Failed to retrieve key entry for alias '$alias': ${e.message}",
+                cause = e
+            )
+        }
+        return entry?.secretKey ?: throw ArishException.KeystoreOperationException(
+            operation = "getExistingSecretKey",
+            message = "KeyStore entry for alias '$alias' is not a valid SecretKeyEntry"
+        )
+    }
+
+    private fun getOrCreateSecretKey(alias: String): SecretKey {
+        val keyStore = loadKeyStore()
+        if (keyStore.containsAlias(alias)) {
+            val entry = try {
+                val protParam = if (injectedKeyStore != null) KeyStore.PasswordProtection(charArrayOf()) else null
+                keyStore.getEntry(alias, protParam) as? KeyStore.SecretKeyEntry
+            } catch (e: Exception) {
+                throw ArishException.KeystoreOperationException(
+                    operation = "getEntry",
+                    message = "Failed to retrieve existing key entry for alias '$alias': ${e.message}",
+                    cause = e
+                )
             }
+            if (entry != null) {
+                return entry.secretKey
+            }
+        }
+
+        // Generate new AES-256 key
+        return try {
+            if (injectedKeyStore != null) {
+                val keyGen = KeyGenerator.getInstance("AES")
+                keyGen.init(256)
+                val secretKey = keyGen.generateKey()
+                injectedKeyStore.setEntry(
+                    alias,
+                    KeyStore.SecretKeyEntry(secretKey),
+                    KeyStore.PasswordProtection(charArrayOf())
+                )
+                secretKey
+            } else {
+                val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, keyStoreProvider)
+                val keyGenSpec = KeyGenParameterSpec.Builder(
+                    alias,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .setKeySize(256)
+                    .setRandomizedEncryptionRequired(true)
+                    .build()
+
+                keyGenerator.init(keyGenSpec)
+                keyGenerator.generateKey()
+            }
+        } catch (e: Exception) {
+            throw ArishException.KeystoreOperationException(
+                operation = "generateKey",
+                message = "Failed to generate master AES key for alias '$alias': ${e.message}",
+                cause = e
+            )
         }
     }
 

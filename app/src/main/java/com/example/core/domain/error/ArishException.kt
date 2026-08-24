@@ -47,6 +47,9 @@ sealed class ArishException(message: String, cause: Throwable? = null) : Excepti
     class SecretNotFoundException(val alias: String) :
         ArishException("Secret with alias '$alias' was not found in secure storage")
 
+    class StoragePersistenceException(val operation: String, message: String, cause: Throwable? = null) :
+        ArishException("Secure storage persistence failed for operation '$operation': $message", cause)
+
     class AuthenticationTagMismatchException(val alias: String, message: String = "Cryptographic authentication tag mismatch or corrupted ciphertext") :
         ArishException("Authentication tag mismatch for '$alias': $message")
 

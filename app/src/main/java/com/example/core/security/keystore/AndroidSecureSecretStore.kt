@@ -45,8 +45,8 @@ class AndroidSecureSecretStore(
                 eventType = "SECRET_CREATED",
                 metadata = mapOf(
                     "alias" to alias,
-                    "description" to (description ?: ""),
-                    "cipherAlgorithm" to "AES-256-GCM"
+                    "algorithm" to "AES-256-GCM",
+                    "status" to "CREATED"
                 )
             )
             Unit

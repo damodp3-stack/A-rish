@@ -65,12 +65,12 @@ class AndroidPermissionBroker(
             return PermissionStatus.GRANTED
         }
 
-        // 2. Log permission request intent
+        // 2. Log permission request intent (DO NOT pass raw rationale string to avoid secret leakage)
         auditLogger?.logSecurityEvent(
             eventType = "PERMISSION_REQUESTED",
             metadata = mapOf(
                 "permissionKey" to permission,
-                "rationale" to (rationale ?: "")
+                "operation" to "REQUEST"
             )
         )
 

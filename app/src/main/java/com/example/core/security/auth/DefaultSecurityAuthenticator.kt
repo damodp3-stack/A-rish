@@ -44,7 +44,7 @@ class DefaultSecurityAuthenticator(
             eventType = "AUTHENTICATION_REQUESTED",
             metadata = mapOf(
                 "requirement" to requirement.name,
-                "promptTitle" to promptTitle
+                "operation" to "PROMPT"
             )
         )
 
@@ -75,7 +75,8 @@ class DefaultSecurityAuthenticator(
                     eventType = "AUTHENTICATION_SUCCESS",
                     metadata = mapOf(
                         "requirement" to requirement.name,
-                        "method" to result.method.name
+                        "method" to result.method.name,
+                        "status" to "SUCCESS"
                     )
                 )
             }
@@ -84,7 +85,7 @@ class DefaultSecurityAuthenticator(
                     eventType = "AUTHENTICATION_FAILED",
                     metadata = mapOf(
                         "requirement" to requirement.name,
-                        "reason" to result.reason
+                        "status" to "DENIED"
                     )
                 )
             }
@@ -93,7 +94,7 @@ class DefaultSecurityAuthenticator(
                     eventType = "AUTHENTICATION_FAILED",
                     metadata = mapOf(
                         "requirement" to requirement.name,
-                        "error" to result.message
+                        "status" to "FAILED"
                     )
                 )
             }
@@ -102,7 +103,7 @@ class DefaultSecurityAuthenticator(
                     eventType = "AUTHENTICATION_FAILED",
                     metadata = mapOf(
                         "requirement" to requirement.name,
-                        "reason" to "CANCELLED"
+                        "status" to "CANCELLED"
                     )
                 )
             }

@@ -23,10 +23,17 @@ class EncryptedSecretStorage(context: Context) {
     }
 
     @Synchronized
-    fun save(record: EncryptedSecretRecord) {
-        prefs.edit()
+    fun save(record: EncryptedSecretRecord): Boolean {
+        val success = prefs.edit()
             .putString(record.alias, record.toJson())
-            .apply()
+            .commit()
+        if (!success) {
+            throw com.example.core.domain.error.ArishException.StoragePersistenceException(
+                operation = "save",
+                message = "Failed to atomically persist secret record for alias '${record.alias}'"
+            )
+        }
+        return true
     }
 
     @Synchronized
@@ -42,7 +49,13 @@ class EncryptedSecretStorage(context: Context) {
     @Synchronized
     fun delete(alias: String): Boolean {
         if (!prefs.contains(alias)) return false
-        prefs.edit().remove(alias).apply()
+        val success = prefs.edit().remove(alias).commit()
+        if (!success) {
+            throw com.example.core.domain.error.ArishException.StoragePersistenceException(
+                operation = "delete",
+                message = "Failed to atomically remove secret record for alias '$alias'"
+            )
+        }
         return true
     }
 
@@ -57,7 +70,7 @@ class EncryptedSecretStorage(context: Context) {
     }
 
     @Synchronized
-    fun clearAll() {
-        prefs.edit().clear().apply()
+    fun clearAll(): Boolean {
+        return prefs.edit().clear().commit()
     }
 }
