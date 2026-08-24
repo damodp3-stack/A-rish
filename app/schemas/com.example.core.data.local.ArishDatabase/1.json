@@ -1,0 +1,793 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "fd45d5395d6b76f555d1e8e1c08becf1",
+    "entities": [
+      {
+        "tableName": "tasks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`task_id` TEXT NOT NULL, `title` TEXT NOT NULL, `user_prompt` TEXT NOT NULL, `structured_intent_id` TEXT, `priority` TEXT NOT NULL, `state` TEXT NOT NULL, `max_steps` INTEGER NOT NULL, `max_tool_calls` INTEGER NOT NULL, `max_execution_time_ms` INTEGER NOT NULL, `max_retries_per_step` INTEGER NOT NULL, `current_step_index` INTEGER NOT NULL, `total_tool_calls_count` INTEGER NOT NULL, `failure_reason` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `completed_at` INTEGER, PRIMARY KEY(`task_id`))",
+        "fields": [
+          {
+            "fieldPath": "taskId",
+            "columnName": "task_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userPrompt",
+            "columnName": "user_prompt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "structuredIntentId",
+            "columnName": "structured_intent_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "priority",
+            "columnName": "priority",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxSteps",
+            "columnName": "max_steps",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxToolCalls",
+            "columnName": "max_tool_calls",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxExecutionTimeMs",
+            "columnName": "max_execution_time_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxRetriesPerStep",
+            "columnName": "max_retries_per_step",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentStepIndex",
+            "columnName": "current_step_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalToolCallsCount",
+            "columnName": "total_tool_calls_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failureReason",
+            "columnName": "failure_reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "task_id"
+          ]
+        }
+      },
+      {
+        "tableName": "steps",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`step_id` TEXT NOT NULL, `task_id` TEXT NOT NULL, `step_index` INTEGER NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `capability_id` TEXT NOT NULL, `tool_id` TEXT NOT NULL, `input_arguments_json` TEXT NOT NULL, `risk_level` TEXT NOT NULL, `risk_reasons_json` TEXT NOT NULL, `status` TEXT NOT NULL, `idempotency_key` TEXT NOT NULL, `retry_count` INTEGER NOT NULL, `approval_id` TEXT, `outcome_summary` TEXT, `outcome_data_json` TEXT, `side_effect_semantics` TEXT, `created_at` INTEGER NOT NULL, `started_at` INTEGER, `completed_at` INTEGER, PRIMARY KEY(`step_id`), FOREIGN KEY(`task_id`) REFERENCES `tasks`(`task_id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "stepId",
+            "columnName": "step_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "taskId",
+            "columnName": "task_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stepIndex",
+            "columnName": "step_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capabilityId",
+            "columnName": "capability_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toolId",
+            "columnName": "tool_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inputArgumentsJson",
+            "columnName": "input_arguments_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "riskLevel",
+            "columnName": "risk_level",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "riskReasonsJson",
+            "columnName": "risk_reasons_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idempotencyKey",
+            "columnName": "idempotency_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryCount",
+            "columnName": "retry_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "approvalId",
+            "columnName": "approval_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "outcomeSummary",
+            "columnName": "outcome_summary",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "outcomeDataJson",
+            "columnName": "outcome_data_json",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sideEffectSemantics",
+            "columnName": "side_effect_semantics",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "started_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "step_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_steps_task_id",
+            "unique": false,
+            "columnNames": [
+              "task_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_steps_task_id` ON `${TABLE_NAME}` (`task_id`)"
+          },
+          {
+            "name": "index_steps_idempotency_key",
+            "unique": true,
+            "columnNames": [
+              "idempotency_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_steps_idempotency_key` ON `${TABLE_NAME}` (`idempotency_key`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "tasks",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "task_id"
+            ],
+            "referencedColumns": [
+              "task_id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "approvals",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`approval_id` TEXT NOT NULL, `task_id` TEXT NOT NULL, `step_id` TEXT NOT NULL, `tool_id` TEXT NOT NULL, `capability_id` TEXT NOT NULL, `risk_level` TEXT NOT NULL, `action_summary` TEXT NOT NULL, `preview_payload_json` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `expires_at` INTEGER NOT NULL, `status` TEXT NOT NULL, `decision_status` TEXT, `decided_by` TEXT, `decided_at` INTEGER, `decision_notes` TEXT, PRIMARY KEY(`approval_id`))",
+        "fields": [
+          {
+            "fieldPath": "approvalId",
+            "columnName": "approval_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "taskId",
+            "columnName": "task_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stepId",
+            "columnName": "step_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toolId",
+            "columnName": "tool_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capabilityId",
+            "columnName": "capability_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "riskLevel",
+            "columnName": "risk_level",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actionSummary",
+            "columnName": "action_summary",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "previewPayloadJson",
+            "columnName": "preview_payload_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiresAt",
+            "columnName": "expires_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "decisionStatus",
+            "columnName": "decision_status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "decidedBy",
+            "columnName": "decided_by",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "decidedAt",
+            "columnName": "decided_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "decisionNotes",
+            "columnName": "decision_notes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "approval_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_approvals_task_id",
+            "unique": false,
+            "columnNames": [
+              "task_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_approvals_task_id` ON `${TABLE_NAME}` (`task_id`)"
+          },
+          {
+            "name": "index_approvals_step_id",
+            "unique": false,
+            "columnNames": [
+              "step_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_approvals_step_id` ON `${TABLE_NAME}` (`step_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "idempotency_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`idempotency_key` TEXT NOT NULL, `task_id` TEXT NOT NULL, `step_id` TEXT NOT NULL, `tool_id` TEXT NOT NULL, `arguments_hash` TEXT NOT NULL, `execution_status` TEXT NOT NULL, `cached_result_json` TEXT NOT NULL, `executed_at` INTEGER NOT NULL, PRIMARY KEY(`idempotency_key`))",
+        "fields": [
+          {
+            "fieldPath": "idempotencyKey",
+            "columnName": "idempotency_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "taskId",
+            "columnName": "task_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stepId",
+            "columnName": "step_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toolId",
+            "columnName": "tool_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "argumentsHash",
+            "columnName": "arguments_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "executionStatus",
+            "columnName": "execution_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedResultJson",
+            "columnName": "cached_result_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "executedAt",
+            "columnName": "executed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "idempotency_key"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_idempotency_records_idempotency_key",
+            "unique": true,
+            "columnNames": [
+              "idempotency_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_idempotency_records_idempotency_key` ON `${TABLE_NAME}` (`idempotency_key`)"
+          },
+          {
+            "name": "index_idempotency_records_task_id_step_id",
+            "unique": false,
+            "columnNames": [
+              "task_id",
+              "step_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_idempotency_records_task_id_step_id` ON `${TABLE_NAME}` (`task_id`, `step_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "verification_evidence",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`evidence_id` TEXT NOT NULL, `step_id` TEXT NOT NULL, `evidence_type` TEXT NOT NULL, `confidence` TEXT NOT NULL, `description` TEXT NOT NULL, `artifact_uri` TEXT, `captured_at` INTEGER NOT NULL, PRIMARY KEY(`evidence_id`))",
+        "fields": [
+          {
+            "fieldPath": "evidenceId",
+            "columnName": "evidence_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "stepId",
+            "columnName": "step_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidenceType",
+            "columnName": "evidence_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "artifactUri",
+            "columnName": "artifact_uri",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "capturedAt",
+            "columnName": "captured_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "evidence_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_verification_evidence_step_id",
+            "unique": false,
+            "columnNames": [
+              "step_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_verification_evidence_step_id` ON `${TABLE_NAME}` (`step_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "memories",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `content` TEXT NOT NULL, `category` TEXT NOT NULL, `importance` INTEGER NOT NULL, `entities_json` TEXT NOT NULL, `source` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `last_accessed_at` INTEGER NOT NULL, `access_count` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "importance",
+            "columnName": "importance",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entitiesJson",
+            "columnName": "entities_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastAccessedAt",
+            "columnName": "last_accessed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accessCount",
+            "columnName": "access_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_memories_category",
+            "unique": false,
+            "columnNames": [
+              "category"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_memories_category` ON `${TABLE_NAME}` (`category`)"
+          },
+          {
+            "name": "index_memories_importance",
+            "unique": false,
+            "columnNames": [
+              "importance"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_memories_importance` ON `${TABLE_NAME}` (`importance`)"
+          }
+        ]
+      },
+      {
+        "tableName": "memories_fts",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`id` TEXT NOT NULL, `content` TEXT NOT NULL, `category` TEXT NOT NULL, `importance` INTEGER NOT NULL, `entities_json` TEXT NOT NULL, `source` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `last_accessed_at` INTEGER NOT NULL, `access_count` INTEGER NOT NULL, content=`memories`)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "importance",
+            "columnName": "importance",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entitiesJson",
+            "columnName": "entities_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastAccessedAt",
+            "columnName": "last_accessed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accessCount",
+            "columnName": "access_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "rowid"
+          ]
+        },
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "memories",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memories_fts_BEFORE_UPDATE BEFORE UPDATE ON `memories` BEGIN DELETE FROM `memories_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memories_fts_BEFORE_DELETE BEFORE DELETE ON `memories` BEGIN DELETE FROM `memories_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memories_fts_AFTER_UPDATE AFTER UPDATE ON `memories` BEGIN INSERT INTO `memories_fts`(`docid`, `id`, `content`, `category`, `importance`, `entities_json`, `source`, `created_at`, `last_accessed_at`, `access_count`) VALUES (NEW.`rowid`, NEW.`id`, NEW.`content`, NEW.`category`, NEW.`importance`, NEW.`entities_json`, NEW.`source`, NEW.`created_at`, NEW.`last_accessed_at`, NEW.`access_count`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_memories_fts_AFTER_INSERT AFTER INSERT ON `memories` BEGIN INSERT INTO `memories_fts`(`docid`, `id`, `content`, `category`, `importance`, `entities_json`, `source`, `created_at`, `last_accessed_at`, `access_count`) VALUES (NEW.`rowid`, NEW.`id`, NEW.`content`, NEW.`category`, NEW.`importance`, NEW.`entities_json`, NEW.`source`, NEW.`created_at`, NEW.`last_accessed_at`, NEW.`access_count`); END"
+        ]
+      },
+      {
+        "tableName": "agent_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`event_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `task_id` TEXT, `step_id` TEXT, `event_type` TEXT NOT NULL, `payload_json` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "eventId",
+            "columnName": "event_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "taskId",
+            "columnName": "task_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "stepId",
+            "columnName": "step_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "eventType",
+            "columnName": "event_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payloadJson",
+            "columnName": "payload_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "event_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_agent_events_task_id",
+            "unique": false,
+            "columnNames": [
+              "task_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_agent_events_task_id` ON `${TABLE_NAME}` (`task_id`)"
+          },
+          {
+            "name": "index_agent_events_step_id",
+            "unique": false,
+            "columnNames": [
+              "step_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_agent_events_step_id` ON `${TABLE_NAME}` (`step_id`)"
+          },
+          {
+            "name": "index_agent_events_event_type",
+            "unique": false,
+            "columnNames": [
+              "event_type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_agent_events_event_type` ON `${TABLE_NAME}` (`event_type`)"
+          },
+          {
+            "name": "index_agent_events_timestamp",
+            "unique": false,
+            "columnNames": [
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_agent_events_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fd45d5395d6b76f555d1e8e1c08becf1')"
+    ]
+  }
+}

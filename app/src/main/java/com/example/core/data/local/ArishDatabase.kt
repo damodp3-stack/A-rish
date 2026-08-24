@@ -19,10 +19,16 @@ import com.example.core.data.local.entity.MemoryEntity
 import com.example.core.data.local.entity.StepEntity
 import com.example.core.data.local.entity.TaskEntity
 import com.example.core.data.local.fts.MemoryFtsEntity
+import com.example.core.data.local.migration.DatabaseMigrations
 
 /**
  * A-RISH Master SQLite Database with full FTS lexical indexing, foreign-key safety,
- * atomic step checkpointing, and durable idempotency constraints.
+ * atomic step checkpointing, durable idempotency constraints, and versioned migrations.
+ *
+ * Production Invariants:
+ * 1. exportSchema = true (Room tracks schema definition snapshots in the repository)
+ * 2. NO fallbackToDestructiveMigration() in production builder.
+ * 3. Atomic append-only audit event logging for all approval state transitions.
  */
 @Database(
     entities = [
@@ -36,7 +42,7 @@ import com.example.core.data.local.fts.MemoryFtsEntity
         AgentEventEntity::class
     ],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class ArishDatabase : RoomDatabase() {
 
@@ -49,6 +55,8 @@ abstract class ArishDatabase : RoomDatabase() {
     abstract fun agentEventDao(): AgentEventDao
 
     companion object {
+        const val DATABASE_NAME = "arish_os.db"
+
         @Volatile
         private var INSTANCE: ArishDatabase? = null
 
@@ -57,9 +65,9 @@ abstract class ArishDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     ArishDatabase::class.java,
-                    "arish_os.db"
+                    DATABASE_NAME
                 )
-                .fallbackToDestructiveMigration()
+                .addMigrations(DatabaseMigrations.MIGRATION_1_2)
                 .build()
                 INSTANCE = instance
                 instance

@@ -16,6 +16,9 @@ interface AgentEventDao {
     @Query("SELECT * FROM agent_events WHERE task_id = :taskId ORDER BY timestamp ASC")
     suspend fun getEventsForTask(taskId: String): List<AgentEventEntity>
 
+    @Query("SELECT * FROM agent_events WHERE event_type = :eventType ORDER BY timestamp ASC")
+    suspend fun getEventsByType(eventType: String): List<AgentEventEntity>
+
     @Query("SELECT * FROM agent_events ORDER BY timestamp DESC LIMIT :limit")
     fun observeRecentEvents(limit: Int = 100): Flow<List<AgentEventEntity>>
 

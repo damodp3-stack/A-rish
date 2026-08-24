@@ -14,7 +14,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.jarvis.osapp"
+    applicationId = "com.aistudio.arish.osapp"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -136,4 +136,8 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
+}
+
+ksp {
+  arg("room.schemaLocation", "$projectDir/schemas")
 }
