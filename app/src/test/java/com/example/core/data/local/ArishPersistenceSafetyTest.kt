@@ -48,7 +48,7 @@ class ArishPersistenceSafetyTest {
         db.close()
     }
 
-    // 1. FTS Actual SQLite Schema & Triggers Verification
+    // 0. SQLite Schema & Trigger Verification
     @Test
     fun testFtsActualSqliteSchema() {
         val sqliteDb = db.openHelper.readableDatabase
@@ -72,70 +72,166 @@ class ArishPersistenceSafetyTest {
         assertTrue("Room must generate SQLite synchronization triggers for memories table", triggers.isNotEmpty())
     }
 
-    // 2. FTS Full-Text Search Lifecycle: Insert -> Search -> Stale Update Removal -> Delete
+    // 1. FTS insertion: Memory inserted -> searchable
     @Test
-    fun testFtsMemorySearchLifecycle() {
+    fun testFtsInsertion() {
         runBlocking {
-            val mem1 = MemoryEntity(
-                id = "mem-1",
-                content = "A-RISH OS memory vault with deterministic lexical recall and neural indexing",
-                category = "ARCHITECTURE",
-                importance = 10,
-                entitiesJson = "[{\"type\":\"MODULE\",\"value\":\"MemoryVault\"}]",
+            val mem = MemoryEntity(
+                id = "mem-insert-1",
+                content = "Autonomous reasoning engine with tool capability execution and verification",
+                category = "CAPABILITY",
+                importance = 9,
+                entitiesJson = "[{\"type\":\"CORE\",\"value\":\"Engine\"}]",
                 source = "SYSTEM",
                 createdAt = 1700000000000L,
                 lastAccessedAt = 1700000000000L,
                 accessCount = 1
             )
-            val mem2 = MemoryEntity(
-                id = "mem-2",
-                content = "User preference for dark mode theme and Tamil audio voice responses",
-                category = "PREFERENCE",
+            db.memoryDao().insertMemory(mem)
+
+            val results = db.memoryDao().searchMemoriesLexical("autonomous")
+            assertEquals(1, results.size)
+            assertEquals("mem-insert-1", results[0].id)
+        }
+    }
+
+    // 2. FTS update: Old text -> NOT searchable, New text -> searchable
+    @Test
+    fun testFtsUpdate() {
+        runBlocking {
+            val original = MemoryEntity(
+                id = "mem-update-1",
+                content = "Initial memory content referencing alpha_protocol",
+                category = "GENERAL",
+                importance = 5,
+                entitiesJson = "[]",
+                source = "USER",
+                createdAt = 1700000000000L,
+                lastAccessedAt = 1700000000000L,
+                accessCount = 1
+            )
+            db.memoryDao().insertMemory(original)
+
+            // Verify searchable initially
+            val initialSearch = db.memoryDao().searchMemoriesLexical("alpha_protocol")
+            assertEquals(1, initialSearch.size)
+
+            // Update with replacement content
+            val updated = original.copy(
+                content = "Updated memory content referencing beta_protocol instead"
+            )
+            db.memoryDao().updateMemory(updated)
+
+            // Old token must return 0 results
+            val staleSearch = db.memoryDao().searchMemoriesLexical("alpha_protocol")
+            assertEquals(0, staleSearch.size)
+
+            // New token must return 1 result
+            val newSearch = db.memoryDao().searchMemoriesLexical("beta_protocol")
+            assertEquals(1, newSearch.size)
+            assertEquals("mem-update-1", newSearch[0].id)
+        }
+    }
+
+    // 3. FTS deletion: Deleted memory -> NOT searchable
+    @Test
+    fun testFtsDeletion() {
+        runBlocking {
+            val mem = MemoryEntity(
+                id = "mem-delete-1",
+                content = "Temporary session artifact marked for deletion",
+                category = "TEMPORARY",
+                importance = 2,
+                entitiesJson = "[]",
+                source = "AGENT",
+                createdAt = 1700000000000L,
+                lastAccessedAt = 1700000000000L,
+                accessCount = 1
+            )
+            db.memoryDao().insertMemory(mem)
+
+            assertEquals(1, db.memoryDao().searchMemoriesLexical("artifact").size)
+
+            db.memoryDao().deleteMemoryById("mem-delete-1")
+
+            val postDeleteResults = db.memoryDao().searchMemoriesLexical("artifact")
+            assertEquals(0, postDeleteResults.size)
+        }
+    }
+
+    // 4. MATCH query: Exact token and prefix/token behavior works as intended
+    @Test
+    fun testMatchQuery() {
+        runBlocking {
+            val mem = MemoryEntity(
+                id = "mem-match-1",
+                content = "Deterministic state machine transitioning through discrete execution phases",
+                category = "ARCHITECTURE",
                 importance = 8,
-                entitiesJson = "[{\"type\":\"LANGUAGE\",\"value\":\"Tamil\"}]",
+                entitiesJson = "[]",
+                source = "SYSTEM",
+                createdAt = 1700000000000L,
+                lastAccessedAt = 1700000000000L,
+                accessCount = 1
+            )
+            db.memoryDao().insertMemory(mem)
+
+            // Exact token
+            val exactResults = db.memoryDao().searchMemoriesLexical("deterministic")
+            assertEquals(1, exactResults.size)
+
+            // Prefix token
+            val prefixResults = db.memoryDao().searchMemoriesLexical("transit*")
+            assertEquals(1, prefixResults.size)
+
+            // Non-matching token
+            val noMatch = db.memoryDao().searchMemoriesLexical("nonexistent")
+            assertEquals(0, noMatch.size)
+        }
+    }
+
+    // 5. Deterministic ranking: Same dataset + same query -> deterministic result ordering
+    @Test
+    fun testDeterministicRanking() {
+        runBlocking {
+            val memHigh = MemoryEntity(
+                id = "mem-rank-high",
+                content = "Critical security protocol documentation",
+                category = "SECURITY",
+                importance = 10,
+                entitiesJson = "[]",
+                source = "SYSTEM",
+                createdAt = 1700000002000L,
+                lastAccessedAt = 1700000002000L,
+                accessCount = 1
+            )
+            val memLow = MemoryEntity(
+                id = "mem-rank-low",
+                content = "General security discussion note",
+                category = "SECURITY",
+                importance = 3,
+                entitiesJson = "[]",
                 source = "USER",
                 createdAt = 1700000001000L,
                 lastAccessedAt = 1700000001000L,
                 accessCount = 1
             )
+            db.memoryDao().insertMemory(memLow)
+            db.memoryDao().insertMemory(memHigh)
 
-            // 1. Insert into memories table (automatically synced to memories_fts)
-            db.memoryDao().insertMemory(mem1)
-            db.memoryDao().insertMemory(mem2)
+            val query1 = db.memoryDao().searchMemoriesLexical("security")
+            val query2 = db.memoryDao().searchMemoriesLexical("security")
 
-            // 2. Search exact and prefix MATCH
-            val archResults = db.memoryDao().searchMemoriesLexical("architecture*")
-            assertEquals(1, archResults.size)
-            assertEquals("mem-1", archResults[0].id)
+            assertEquals(2, query1.size)
+            assertEquals("mem-rank-high", query1[0].id)
+            assertEquals("mem-rank-low", query1[1].id)
 
-            val tamilResults = db.memoryDao().searchMemoriesLexical("Tamil")
-            assertEquals(1, tamilResults.size)
-            assertEquals("mem-2", tamilResults[0].id)
-
-            // 3. Update memory: change content of mem2 from Tamil to Telugu
-            val updatedMem2 = mem2.copy(
-                content = "User preference for dark mode theme and Telugu audio voice responses",
-                entitiesJson = "[{\"type\":\"LANGUAGE\",\"value\":\"Telugu\"}]"
-            )
-            db.memoryDao().updateMemory(updatedMem2)
-
-            // Stale search for Tamil on mem2 must return 0 results
-            val updatedTamilResults = db.memoryDao().searchMemoriesLexical("Tamil")
-            assertEquals(0, updatedTamilResults.size)
-
-            // New search for Telugu must find mem2
-            val teluguResults = db.memoryDao().searchMemoriesLexical("Telugu")
-            assertEquals(1, teluguResults.size)
-            assertEquals("mem-2", teluguResults[0].id)
-
-            // 4. Delete memory
-            db.memoryDao().deleteMemoryById("mem-2")
-            val postDeleteResults = db.memoryDao().searchMemoriesLexical("Telugu")
-            assertEquals(0, postDeleteResults.size)
+            // Ranking must be 100% deterministic across repeated invocations
+            assertEquals(query1.map { it.id }, query2.map { it.id })
         }
     }
 
-    // 3. Idempotency: Unique Constraint Rejects Duplicate Insertion
+    // 6. Idempotency: Same idempotency key -> second insertion rejected by SQLite UNIQUE constraint
     @Test
     fun testIdempotencyUniqueConstraintRejection() {
         runBlocking {
@@ -177,7 +273,7 @@ class ArishPersistenceSafetyTest {
         }
     }
 
-    // 4. Idempotency Crash Recovery: Resumption detects cached result and prevents duplicate side effect
+    // 7. Crash recovery: Existing idempotency record -> recovery must NOT execute duplicate side effect
     @Test
     fun testIdempotencyCrashRecoveryResumption() {
         runBlocking {
@@ -207,9 +303,9 @@ class ArishPersistenceSafetyTest {
         }
     }
 
-    // 5. Transaction Atomicity: Multi-Table Failure Rolls Back All Entities
+    // 8. Transaction rollback: Task update + Step update + Evidence insert. Force failure. Verify ALL three rollback.
     @Test
-    fun testMultiEntityTransactionRollback() {
+    fun testTransactionRollback() {
         runBlocking {
             val initialTask = TaskEntity(
                 taskId = "tx-task-atomic",
@@ -280,9 +376,9 @@ class ArishPersistenceSafetyTest {
         }
     }
 
-    // 6. Approval Recovery: PENDING approval survives process restart
+    // 9. Approval process recovery: PENDING approval -> simulated process restart -> still PENDING
     @Test
-    fun testApprovalDurableAcrossProcessRestart() {
+    fun testApprovalProcessRecovery() {
         runBlocking {
             val approval = ApprovalEntity(
                 approvalId = "appr-durable-99",
@@ -318,9 +414,41 @@ class ArishPersistenceSafetyTest {
         }
     }
 
-    // 7. Immutable Approval Audit Trail Lifecycle (CREATED -> APPROVED -> REJECTED -> CANCELLED -> EXPIRED)
+    // 10. Approval expiry: Expired PENDING approval -> EXPIRED -> cannot execute
     @Test
-    fun testImmutableApprovalAuditTrailLifecycle() {
+    fun testApprovalExpiry() {
+        runBlocking {
+            val now = 1700000100000L
+            val expiredApproval = ApprovalEntity(
+                approvalId = "appr-expired-1",
+                taskId = "task-exp-1",
+                stepId = "step-exp-1",
+                toolId = "delete_file",
+                capabilityId = "FILE_SYSTEM",
+                riskLevel = "HIGH",
+                actionSummary = "Delete obsolete log directory",
+                previewPayloadJson = "{}",
+                createdAt = 1700000000000L,
+                expiresAt = 1700000050000L, // Expired 50s ago
+                status = "PENDING"
+            )
+            approvalAuditManager.createApproval(expiredApproval)
+
+            // Run expiration reaper
+            val expiredCount = approvalAuditManager.expireOldApprovals(currentTime = now)
+            assertEquals(1, expiredCount)
+
+            val reapedApproval = db.approvalDao().getApprovalById("appr-expired-1")
+            assertEquals("EXPIRED", reapedApproval?.status)
+
+            val auditEvents = db.agentEventDao().getEventsByType("APPROVAL_EXPIRED")
+            assertEquals(1, auditEvents.size)
+        }
+    }
+
+    // 11. Approval audit: Every transition must have append-only history (APPROVAL_CREATED, APPROVAL_APPROVED, APPROVAL_REJECTED, APPROVAL_CANCELLED, APPROVAL_EXPIRED)
+    @Test
+    fun testApprovalAudit() {
         runBlocking {
             val approval1 = ApprovalEntity(
                 approvalId = "appr-101",
@@ -414,41 +542,9 @@ class ArishPersistenceSafetyTest {
         }
     }
 
-    // 8. Expired Approvals: Past timeout transitions to EXPIRED and records audit event
+    // 12. Cascade safety: Deleting Task must NOT delete agent_events, approval audit history, or historical verification evidence
     @Test
-    fun testExpiredApprovalLifecycle() {
-        runBlocking {
-            val now = 1700000100000L
-            val expiredApproval = ApprovalEntity(
-                approvalId = "appr-expired-1",
-                taskId = "task-exp-1",
-                stepId = "step-exp-1",
-                toolId = "delete_file",
-                capabilityId = "FILE_SYSTEM",
-                riskLevel = "HIGH",
-                actionSummary = "Delete obsolete log directory",
-                previewPayloadJson = "{}",
-                createdAt = 1700000000000L,
-                expiresAt = 1700000050000L, // Expired 50s ago
-                status = "PENDING"
-            )
-            approvalAuditManager.createApproval(expiredApproval)
-
-            // Run expiration reaper
-            val expiredCount = approvalAuditManager.expireOldApprovals(currentTime = now)
-            assertEquals(1, expiredCount)
-
-            val reapedApproval = db.approvalDao().getApprovalById("appr-expired-1")
-            assertEquals("EXPIRED", reapedApproval?.status)
-
-            val auditEvents = db.agentEventDao().getEventsByType("APPROVAL_EXPIRED")
-            assertEquals(1, auditEvents.size)
-        }
-    }
-
-    // 9. Audit & Evidence Decoupling from Task Cascade Deletion
-    @Test
-    fun testAuditAndEvidenceDecoupledFromTaskCascade() {
+    fun testCascadeSafety() {
         runBlocking {
             val task = TaskEntity(
                 taskId = "task-cascade-test",
@@ -543,7 +639,7 @@ class ArishPersistenceSafetyTest {
         }
     }
 
-    // 10. Explicit Database Migration V1 -> V2 Execution Test
+    // 13. Explicit Database Migration V1 -> V2 Execution Test
     @Test
     fun testDatabaseMigrationV1toV2() {
         val sqliteDb = db.openHelper.writableDatabase
@@ -562,7 +658,7 @@ class ArishPersistenceSafetyTest {
         assertTrue("MIGRATION_1_2 must create index_agent_events_session", foundSessionIndex)
     }
 
-    // 11. Secret Verification: DB Entities must NEVER contain plaintext credentials
+    // 14. Secret Verification: DB Entities must NEVER contain plaintext credentials
     @Test
     fun testNoSecretsInDatabaseEntities() {
         val entityClasses = listOf(

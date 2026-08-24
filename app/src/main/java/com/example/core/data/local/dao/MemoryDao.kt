@@ -42,6 +42,7 @@ interface MemoryDao {
         SELECT memories.* FROM memories
         JOIN memories_fts ON memories.rowid = memories_fts.rowid
         WHERE memories_fts MATCH :query
+        ORDER BY memories.importance DESC, memories.created_at DESC
     """)
     suspend fun searchMemoriesLexical(query: String): List<MemoryEntity>
 
