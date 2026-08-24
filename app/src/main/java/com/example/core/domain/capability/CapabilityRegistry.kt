@@ -85,31 +85,31 @@ object CapabilityRegistry {
             id = CapabilityId.DEEP_RESEARCH,
             title = "Deep Research",
             description = "Conducts multi-query synthesis and structured research",
-            supportedToolIds = listOf("web_search")
+            supportedToolIds = listOf("web_search", "deep_research")
         ),
         CapabilityDefinition(
             id = CapabilityId.CALCULATE_MATH,
             title = "Calculator",
             description = "Evaluates mathematical expressions deterministically",
-            supportedToolIds = listOf("calculator")
+            supportedToolIds = listOf("calculate", "calculator")
         ),
         CapabilityDefinition(
             id = CapabilityId.GET_CURRENT_TIME,
             title = "Current Time",
             description = "Reads current date and time",
-            supportedToolIds = listOf("calculator", "device_diagnostics")
+            supportedToolIds = listOf("get_current_time", "calculator", "device_diagnostics")
         ),
         CapabilityDefinition(
             id = CapabilityId.REMEMBER_FACT,
             title = "Remember Fact",
             description = "Stores knowledge in Memory Matrix",
-            supportedToolIds = listOf("memory")
+            supportedToolIds = listOf("memory_store", "memory")
         ),
         CapabilityDefinition(
             id = CapabilityId.RECALL_FACTS,
             title = "Recall Memory",
             description = "Retrieves relevant knowledge from Memory Matrix",
-            supportedToolIds = listOf("memory")
+            supportedToolIds = listOf("memory_search", "memory")
         ),
         CapabilityDefinition(
             id = CapabilityId.FORGET_FACT,

@@ -642,20 +642,62 @@ class ArishPersistenceSafetyTest {
     // 13. Explicit Database Migration V1 -> V2 Execution Test
     @Test
     fun testDatabaseMigrationV1toV2() {
-        val sqliteDb = db.openHelper.writableDatabase
-        DatabaseMigrations.MIGRATION_1_2.migrate(sqliteDb)
+        runBlocking {
+            // Seed data prior to migration
+            db.memoryDao().insertMemory(
+                MemoryEntity(
+                    id = "mem-mig-1",
+                    content = "Lexical search query persistence test across migration",
+                    category = "SYSTEM",
+                    importance = 9,
+                    entitiesJson = "[]",
+                    source = "SYSTEM",
+                    createdAt = 1700000000000L,
+                    lastAccessedAt = 1700000000000L,
+                    accessCount = 1
+                )
+            )
 
-        val cursor = sqliteDb.query("PRAGMA index_list('agent_events')")
-        var foundSessionIndex = false
-        while (cursor.moveToNext()) {
-            val indexName = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-            if (indexName == "index_agent_events_session") {
-                foundSessionIndex = true
-                break
+            db.idempotencyDao().insertRecord(
+                IdempotencyEntity(
+                    idempotencyKey = "idemp-mig-key",
+                    taskId = "task-mig-1",
+                    stepId = "step-mig-1",
+                    toolId = "tool_mig",
+                    argumentsHash = "hash-mig",
+                    executionStatus = "EXECUTED",
+                    cachedResultJson = "{\"status\":\"ok\"}",
+                    executedAt = 1700000000000L
+                )
+            )
+
+            // Execute migration
+            val sqliteDb = db.openHelper.writableDatabase
+            DatabaseMigrations.MIGRATION_1_2.migrate(sqliteDb)
+
+            // 1. Verify new index created
+            val cursor = sqliteDb.query("PRAGMA index_list('agent_events')")
+            var foundSessionIndex = false
+            while (cursor.moveToNext()) {
+                val indexName = cursor.getString(cursor.getColumnIndexOrThrow("name"))
+                if (indexName == "index_agent_events_session") {
+                    foundSessionIndex = true
+                    break
+                }
             }
+            cursor.close()
+            assertTrue("MIGRATION_1_2 must create index_agent_events_session", foundSessionIndex)
+
+            // 2. Verify FTS table and searchability survive migration
+            val searchResults = db.memoryDao().searchMemoriesLexical("persistence")
+            assertEquals(1, searchResults.size)
+            assertEquals("mem-mig-1", searchResults[0].id)
+
+            // 3. Verify Idempotency records survive migration and constraint holds
+            val idempRecord = db.idempotencyDao().getRecordByKey("idemp-mig-key")
+            assertNotNull(idempRecord)
+            assertEquals("EXECUTED", idempRecord?.executionStatus)
         }
-        cursor.close()
-        assertTrue("MIGRATION_1_2 must create index_agent_events_session", foundSessionIndex)
     }
 
     // 14. Secret Verification: DB Entities must NEVER contain plaintext credentials

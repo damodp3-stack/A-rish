@@ -25,6 +25,14 @@ sealed class ArishException(message: String, cause: Throwable? = null) : Excepti
 
     class UnknownToolException(val toolId: String) : ArishException("Tool '$toolId' is not registered")
 
+    class ToolNotFoundException(val toolId: String, message: String = "Tool '$toolId' was not found in registry") :
+        ArishException(message)
+
+    class AmbiguousIntentException(message: String) : ArishException(message)
+
+    class ToolExecutionException(val toolId: String, message: String, cause: Throwable? = null) :
+        ArishException("Execution error in tool '$toolId': $message", cause)
+
     class ExecutionTimeoutException(val timeoutMs: Long, message: String) :
         ArishException("Execution timed out after ${timeoutMs}ms: $message")
 
@@ -32,4 +40,20 @@ sealed class ArishException(message: String, cause: Throwable? = null) : Excepti
         ArishException("Idempotency key '$key' violation: $message")
 
     class ContextFirewallViolationException(message: String) : ArishException(message)
+
+    class KeystoreOperationException(val operation: String, message: String, cause: Throwable? = null) :
+        ArishException("Keystore operation '$operation' failed: $message", cause)
+
+    class SecretNotFoundException(val alias: String) :
+        ArishException("Secret with alias '$alias' was not found in secure storage")
+
+    class AuthenticationTagMismatchException(val alias: String, message: String = "Cryptographic authentication tag mismatch or corrupted ciphertext") :
+        ArishException("Authentication tag mismatch for '$alias': $message")
+
+    class AuthenticationRequiredException(val requirement: String, message: String) :
+        ArishException("Authentication required ($requirement): $message")
+
+    class PermissionPermanentlyDeniedException(val permissionKey: String, message: String) :
+        ArishException("Permission permanently denied for $permissionKey: $message")
 }
+

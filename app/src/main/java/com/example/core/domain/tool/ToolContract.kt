@@ -3,6 +3,7 @@ package com.example.core.domain.tool
 import com.example.core.domain.capability.CapabilityId
 import com.example.core.domain.execution.DeliveryGuarantee
 import com.example.core.domain.execution.SideEffectSemantics
+import com.example.core.domain.execution.ToolOutcome
 import com.example.core.domain.security.PermissionRequirement
 import com.example.core.domain.security.RiskLevel
 
@@ -20,4 +21,6 @@ interface ToolContract {
     val deliveryGuarantee: DeliveryGuarantee
     val argumentSchema: ToolArgumentSchema
     val requiredPermissions: List<PermissionRequirement>
+
+    suspend fun execute(args: Map<String, Any?>): ToolOutcome
 }
