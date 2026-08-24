@@ -24,14 +24,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -52,9 +54,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -84,6 +89,20 @@ fun ChatScreen(
     var inputText by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val listState = rememberLazyListState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    val onSendAction = {
+        if (inputText.isNotBlank() || selectedImageUri != null) {
+            val text = inputText
+            val uri = selectedImageUri
+            inputText = ""
+            selectedImageUri = null
+            keyboardController?.hide()
+            focusManager.clearFocus()
+            viewModel.sendMessage(text, uri)
+        }
+    }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -274,6 +293,14 @@ fun ChatScreen(
                             fontSize = 14.sp
                         )
                     },
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Send
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSend = { onSendAction() }
+                    ),
+                    singleLine = false,
+                    maxLines = 4,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = JarvisCyan,
                         unfocusedBorderColor = JarvisSurfaceBorder,
@@ -291,20 +318,14 @@ fun ChatScreen(
 
                 if (inputText.isNotBlank() || selectedImageUri != null) {
                     IconButton(
-                        onClick = {
-                            val text = inputText
-                            val uri = selectedImageUri
-                            inputText = ""
-                            selectedImageUri = null
-                            viewModel.sendMessage(text, uri)
-                        },
+                        onClick = onSendAction,
                         modifier = Modifier
                             .size(44.dp)
                             .background(JarvisCyan, CircleShape)
                             .testTag("chat_send_button")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Send,
+                            imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
                             tint = Color(0xFF030712),
                             modifier = Modifier.size(20.dp)

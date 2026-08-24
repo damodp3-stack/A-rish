@@ -1,6 +1,6 @@
 {
-  "name": "JARVIS OS",
-  "description": "Native Android AI Assistant with voice interaction, Gemini intelligence, memory matrix, autonomous agent planner, and extensible tools.",
+  "name": "A-RISH",
+  "description": "Adaptive Responsive Intelligent System Host — Deterministic, Bounded AI Operating Assistant with Verification Engine, Context Firewall, and Multilingual Support.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

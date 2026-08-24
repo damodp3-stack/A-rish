@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Biotech
 import androidx.compose.material.icons.filled.Delete
@@ -45,9 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.model.ResearchSession
@@ -71,6 +76,18 @@ import com.example.ui.viewmodel.JarvisViewModel
 fun ResearchScreen(viewModel: JarvisViewModel) {
     val sessions by viewModel.researchSessions.collectAsState()
     var topicInput by remember { mutableStateOf("") }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    val launchResearchAction = {
+        if (topicInput.isNotBlank()) {
+            val query = topicInput
+            topicInput = ""
+            keyboardController?.hide()
+            focusManager.clearFocus()
+            viewModel.startDeepResearch(query)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -126,7 +143,7 @@ fun ResearchScreen(viewModel: JarvisViewModel) {
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "JARVIS will query academic, mobile silicon, and technical sources, cross-verify conflicting facts, and generate a comprehensive dossier.",
+                        text = "JARVIS will query academic, technical, and live web sources, cross-verify conflicting facts, and generate a comprehensive dossier.",
                         color = JarvisTextSecondary,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
@@ -137,7 +154,13 @@ fun ResearchScreen(viewModel: JarvisViewModel) {
                     OutlinedTextField(
                         value = topicInput,
                         onValueChange = { topicInput = it },
-                        placeholder = { Text("e.g. Next-Gen Mobile Silicon on OnePlus 15R") },
+                        placeholder = { Text("e.g. Quantum Computing Architectures 2026") },
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Search
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSearch = { launchResearchAction() }
+                        ),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = JarvisCyan,
                             unfocusedBorderColor = JarvisSurfaceBorder,
@@ -151,12 +174,7 @@ fun ResearchScreen(viewModel: JarvisViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
-                        onClick = {
-                            if (topicInput.isNotBlank()) {
-                                viewModel.startDeepResearch(topicInput)
-                                topicInput = ""
-                            }
-                        },
+                        onClick = launchResearchAction,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = JarvisCyan,
                             contentColor = Color(0xFF030712)

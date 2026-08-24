@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "JARVIS OS"
+rootProject.name = "A-RISH"
 
 include(":app")

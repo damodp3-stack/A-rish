@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Biotech
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Psychology
@@ -59,7 +59,7 @@ import com.example.ui.viewmodel.JarvisViewModel
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Home : Screen("home", "CORE", Icons.Default.Home)
-    object Chat : Screen("chat", "COMM", Icons.Default.Chat)
+    object Chat : Screen("chat", "COMM", Icons.AutoMirrored.Filled.Chat)
     object Tasks : Screen("tasks", "AGENT", Icons.Default.Psychology)
     object Memory : Screen("memory", "MATRIX", Icons.Default.Memory)
     object Research : Screen("research", "RESEARCH", Icons.Default.Biotech)
