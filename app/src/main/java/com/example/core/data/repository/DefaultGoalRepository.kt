@@ -20,8 +20,8 @@ class DefaultGoalRepository(
     private val hierarchyValidator: GoalHierarchyValidator = GoalHierarchyValidator()
 ) : GoalRepository {
 
-    override suspend fun getGoal(id: String): Goal? {
-        return goalDao.getGoalById(id)?.toDomain()
+    override suspend fun getGoal(userId: UserId, id: String): Goal? {
+        return goalDao.getGoalById(id, userId.value)?.toDomain()
     }
 
     override fun observeActiveGoals(userId: UserId, limit: Int): Flow<List<Goal>> {
@@ -81,7 +81,7 @@ class DefaultGoalRepository(
         val newVersion = expectedVersion + 1L
 
         val rowsUpdated = goalDao.updateGoalWithVersion(
-            id = goal.id,
+            id = goal.id, userId = goal.userId.value,
             expectedVersion = expectedVersion,
             newVersion = newVersion,
             title = updatedEntity.title,
@@ -106,8 +106,8 @@ class DefaultGoalRepository(
         }
     }
 
-    override suspend fun updateGoalProgress(goalId: String, progress: GoalProgress): Result<Goal> = runCatching {
-        val existing = goalDao.getGoalById(goalId)?.toDomain()
+    override suspend fun updateGoalProgress(userId: UserId, goalId: String, progress: GoalProgress): Result<Goal> = runCatching {
+        val existing = goalDao.getGoalById(goalId, userId.value)?.toDomain()
             ?: throw NoSuchElementException("Goal not found: $goalId")
 
         val updatedGoal = existing.copy(
@@ -125,8 +125,8 @@ class DefaultGoalRepository(
         finalGoal.copy(version = finalGoal.version + 1L)
     }
 
-    override suspend fun deleteGoal(id: String): Result<Unit> = runCatching {
-        val deleted = goalDao.deleteGoal(id)
+    override suspend fun deleteGoal(userId: UserId, id: String): Result<Unit> = runCatching {
+        val deleted = goalDao.deleteGoal(id, userId.value)
         if (deleted == 0) {
             throw NoSuchElementException("Goal not found for deletion: $id")
         }

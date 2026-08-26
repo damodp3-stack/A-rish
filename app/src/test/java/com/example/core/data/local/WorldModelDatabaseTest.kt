@@ -102,7 +102,7 @@ class WorldModelDatabaseTest {
         assertTrue(createResult.isSuccess)
 
         // Read
-        val fetched = goalRepo.getGoal("goal_test_1")
+        val fetched = goalRepo.getGoal(userId, "goal_test_1")
         assertNotNull(fetched)
         assertEquals("Master World Model", fetched?.title)
         assertEquals(1L, fetched?.version)
@@ -113,7 +113,7 @@ class WorldModelDatabaseTest {
         val updateResult = goalRepo.updateGoal(updatedGoal)
         assertTrue(updateResult.isSuccess)
 
-        val fetchedAfterUpdate = goalRepo.getGoal("goal_test_1")
+        val fetchedAfterUpdate = goalRepo.getGoal(userId, "goal_test_1")
         assertEquals(2L, fetchedAfterUpdate?.version)
         assertEquals("Updated description with OCC", fetchedAfterUpdate?.description)
 
@@ -143,10 +143,10 @@ class WorldModelDatabaseTest {
 
         // Progress milestone update: 4/4 completed
         val completionProgress = GoalProgress.DiscreteMilestones(totalMilestones = 4, completedMilestones = 4)
-        val updateResult = goalRepo.updateGoalProgress("goal_progress_1", completionProgress)
+        val updateResult = goalRepo.updateGoalProgress(userId, "goal_progress_1", completionProgress)
         assertTrue(updateResult.isSuccess)
 
-        val updatedGoal = goalRepo.getGoal("goal_progress_1")
+        val updatedGoal = goalRepo.getGoal(userId, "goal_progress_1")
         assertEquals(GoalStatus.COMPLETED, updatedGoal?.status)
         assertEquals(1.0f, updatedGoal?.progress?.fraction ?: 0.0f, 0.001f)
         assertNotNull(updatedGoal?.completedAt)
@@ -178,25 +178,25 @@ class WorldModelDatabaseTest {
         projectRepo.saveProject(project)
 
         // Link them
-        projectRepo.linkGoalAndProject("goal_rel_1", "proj_rel_1")
+        projectRepo.linkGoalAndProject(userId, "goal_rel_1", "proj_rel_1")
 
-        val projectsForGoal = projectRepo.getProjectsForGoal("goal_rel_1")
+        val projectsForGoal = projectRepo.getProjectsForGoal(userId, "goal_rel_1")
         assertEquals(1, projectsForGoal.size)
         assertEquals("proj_rel_1", projectsForGoal[0].id)
 
-        val goalsForProject = projectRepo.getGoalsForProject("proj_rel_1")
+        val goalsForProject = projectRepo.getGoalsForProject(userId, "proj_rel_1")
         assertEquals(1, goalsForProject.size)
         assertEquals("goal_rel_1", goalsForProject[0].id)
 
         // Delete Goal -> CASCADE must clean up link without deleting project
-        goalRepo.deleteGoal("goal_rel_1")
-        assertNull(goalRepo.getGoal("goal_rel_1"))
+        goalRepo.deleteGoal(userId, "goal_rel_1")
+        assertNull(goalRepo.getGoal(userId, "goal_rel_1"))
 
-        val projectsAfterGoalDeletion = projectRepo.getProjectsForGoal("goal_rel_1")
+        val projectsAfterGoalDeletion = projectRepo.getProjectsForGoal(userId, "goal_rel_1")
         assertEquals(0, projectsAfterGoalDeletion.size)
 
         // Project itself still exists
-        val survivingProject = projectRepo.getProject("proj_rel_1")
+        val survivingProject = projectRepo.getProject(userId, "proj_rel_1")
         assertNotNull(survivingProject)
     }
 
@@ -234,8 +234,8 @@ class WorldModelDatabaseTest {
         assertEquals("person_damo_001", res3?.canonicalId)
 
         // Delete Entity -> Cascades delete to aliases
-        worldRepo.deleteEntity("person_damo_001")
-        assertNull(worldRepo.getEntity("person_damo_001"))
+        worldRepo.deleteEntity(userId, "person_damo_001")
+        assertNull(worldRepo.getEntity(userId, "person_damo_001"))
         assertNull(worldRepo.resolveEntity(userId, "Lead Architect"))
     }
 

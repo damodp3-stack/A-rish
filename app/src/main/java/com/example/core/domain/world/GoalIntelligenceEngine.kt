@@ -113,8 +113,8 @@ class GoalIntelligenceEngine(
     /**
      * Updates progress towards an existing goal with derived status calculation.
      */
-    suspend fun updateGoalProgress(goalId: String, progress: GoalProgress): Result<Goal> {
-        return goalRepository.updateGoalProgress(goalId, progress)
+    suspend fun updateGoalProgress(userId: UserId, goalId: String, progress: GoalProgress): Result<Goal> {
+        return goalRepository.updateGoalProgress(userId, goalId, progress)
     }
 
     /**

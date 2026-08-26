@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CommitmentDao {
 
-    @Query("SELECT * FROM commitments WHERE id = :id")
-    suspend fun getCommitmentById(id: String): CommitmentEntity?
+    @Query("SELECT * FROM commitments WHERE id = :id AND user_id = :userId")
+    suspend fun getCommitmentById(id: String, userId: String): CommitmentEntity?
 
     @Query("SELECT * FROM commitments WHERE user_id = :userId AND is_completed = 0 AND due_timestamp >= :fromTimestamp ORDER BY due_timestamp ASC LIMIT :limit")
     fun getUpcomingCommitments(userId: String, fromTimestamp: Long, limit: Int = 10): Flow<List<CommitmentEntity>>
@@ -35,6 +35,6 @@ interface CommitmentDao {
     @Update
     suspend fun updateCommitment(commitment: CommitmentEntity): Int
 
-    @Query("DELETE FROM commitments WHERE id = :id")
-    suspend fun deleteCommitment(id: String): Int
+    @Query("DELETE FROM commitments WHERE id = :id AND user_id = :userId")
+    suspend fun deleteCommitment(id: String, userId: String): Int
 }

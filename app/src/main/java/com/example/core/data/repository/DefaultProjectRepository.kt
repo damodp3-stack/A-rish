@@ -20,8 +20,8 @@ class DefaultProjectRepository(
     private val timeProvider: TimeProvider
 ) : ProjectRepository {
 
-    override suspend fun getProject(id: String): Project? {
-        return projectDao.getProjectById(id)?.toDomain()
+    override suspend fun getProject(userId: UserId, id: String): Project? {
+        return projectDao.getProjectById(id, userId.value)?.toDomain()
     }
 
     override fun observeProjects(userId: UserId): Flow<List<Project>> {
@@ -31,7 +31,7 @@ class DefaultProjectRepository(
     }
 
     override suspend fun saveProject(project: Project): Result<Unit> = runCatching {
-        val existing = projectDao.getProjectById(project.id)
+        val existing = projectDao.getProjectById(project.id, project.userId.value)
         if (existing == null) {
             projectDao.insertProject(project.toEntity())
         } else {
@@ -39,7 +39,7 @@ class DefaultProjectRepository(
             val expectedVersion = project.version
             val newVersion = expectedVersion + 1L
             val rows = projectDao.updateProjectWithVersion(
-                id = project.id,
+                id = project.id, userId = project.userId.value,
                 expectedVersion = expectedVersion,
                 newVersion = newVersion,
                 name = updated.name,
@@ -56,7 +56,7 @@ class DefaultProjectRepository(
         }
     }
 
-    override suspend fun linkGoalAndProject(goalId: String, projectId: String): Result<Unit> = runCatching {
+    override suspend fun linkGoalAndProject(userId: UserId, goalId: String, projectId: String): Result<Unit> = runCatching {
         linkDao.insertLink(
             GoalProjectLinkEntity(
                 goalId = goalId,
@@ -66,20 +66,20 @@ class DefaultProjectRepository(
         )
     }
 
-    override suspend fun unlinkGoalAndProject(goalId: String, projectId: String): Result<Unit> = runCatching {
+    override suspend fun unlinkGoalAndProject(userId: UserId, goalId: String, projectId: String): Result<Unit> = runCatching {
         linkDao.removeLink(goalId, projectId)
     }
 
-    override suspend fun getProjectsForGoal(goalId: String): List<Project> {
+    override suspend fun getProjectsForGoal(userId: UserId, goalId: String): List<Project> {
         return linkDao.getProjectsForGoal(goalId).map { it.toDomain() }
     }
 
-    override suspend fun getGoalsForProject(projectId: String): List<Goal> {
+    override suspend fun getGoalsForProject(userId: UserId, projectId: String): List<Goal> {
         return linkDao.getGoalsForProject(projectId).map { it.toDomain() }
     }
 
-    override suspend fun deleteProject(id: String): Result<Unit> = runCatching {
-        val deleted = projectDao.deleteProject(id)
+    override suspend fun deleteProject(userId: UserId, id: String): Result<Unit> = runCatching {
+        val deleted = projectDao.deleteProject(id, userId.value)
         if (deleted == 0) {
             throw NoSuchElementException("Project not found for deletion: $id")
         }

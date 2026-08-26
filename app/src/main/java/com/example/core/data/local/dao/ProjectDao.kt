@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ProjectDao {
 
-    @Query("SELECT * FROM projects WHERE id = :id")
-    suspend fun getProjectById(id: String): ProjectEntity?
+    @Query("SELECT * FROM projects WHERE id = :id AND user_id = :userId")
+    suspend fun getProjectById(id: String, userId: String): ProjectEntity?
 
     @Query("SELECT * FROM projects WHERE user_id = :userId AND status = :status ORDER BY updated_at DESC")
     fun getProjectsByStatus(userId: String, status: String): Flow<List<ProjectEntity>>
@@ -39,11 +39,11 @@ interface ProjectDao {
             version = :newVersion, 
             updated_at = :updatedAt, 
             completed_at = :completedAt 
-        WHERE id = :id AND version = :expectedVersion
+        WHERE id = :id AND user_id = :userId AND version = :expectedVersion
     """)
     suspend fun updateProjectWithVersion(
         id: String,
-        expectedVersion: Long,
+        userId: String, expectedVersion: Long,
         newVersion: Long,
         name: String,
         description: String,
@@ -54,6 +54,6 @@ interface ProjectDao {
         completedAt: Long?
     ): Int
 
-    @Query("DELETE FROM projects WHERE id = :id")
-    suspend fun deleteProject(id: String): Int
+    @Query("DELETE FROM projects WHERE id = :id AND user_id = :userId")
+    suspend fun deleteProject(id: String, userId: String): Int
 }

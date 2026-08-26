@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface GoalDao {
 
-    @Query("SELECT * FROM goals WHERE id = :id")
-    suspend fun getGoalById(id: String): GoalEntity?
+    @Query("SELECT * FROM goals WHERE id = :id AND user_id = :userId")
+    suspend fun getGoalById(id: String, userId: String): GoalEntity?
 
     @Query("SELECT * FROM goals WHERE user_id = :userId AND status = 'ACTIVE' ORDER BY priority DESC, created_at DESC LIMIT :limit")
     fun getActiveGoals(userId: String, limit: Int = 10): Flow<List<GoalEntity>>
@@ -53,11 +53,11 @@ interface GoalDao {
             version = :newVersion, 
             updated_at = :updatedAt, 
             completed_at = :completedAt 
-        WHERE id = :id AND version = :expectedVersion
+        WHERE id = :id AND user_id = :userId AND version = :expectedVersion
     """)
     suspend fun updateGoalWithVersion(
         id: String,
-        expectedVersion: Long,
+        userId: String, expectedVersion: Long,
         newVersion: Long,
         title: String,
         description: String,
@@ -76,8 +76,8 @@ interface GoalDao {
         completedAt: Long?
     ): Int
 
-    @Query("DELETE FROM goals WHERE id = :id")
-    suspend fun deleteGoal(id: String): Int
+    @Query("DELETE FROM goals WHERE id = :id AND user_id = :userId")
+    suspend fun deleteGoal(id: String, userId: String): Int
 
     @Query("DELETE FROM goals WHERE user_id = :userId")
     suspend fun deleteAllGoalsForUser(userId: String): Int

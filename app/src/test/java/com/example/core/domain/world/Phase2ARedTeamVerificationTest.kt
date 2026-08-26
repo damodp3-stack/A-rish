@@ -310,7 +310,7 @@ class Phase2ARedTeamVerificationTest {
             completedAt = null
         )
         db.goalDao().insertGoal(goalEntity)
-        val loadedGoal = db.goalDao().getGoalById("goal_migrated_001")
+        val loadedGoal = db.goalDao().getGoalById("goal_migrated_001", userId.value)
         assertNotNull(loadedGoal)
         assertEquals("Migrated Goal", loadedGoal?.title)
     }
@@ -386,8 +386,8 @@ class Phase2ARedTeamVerificationTest {
         goalRepo.createGoal(initialGoal)
 
         // Simulate two concurrent writers who both read version 1L
-        val writer1Goal = goalRepo.getGoal("goal_occ_concurrent")!!
-        val writer2Goal = goalRepo.getGoal("goal_occ_concurrent")!!
+        val writer1Goal = goalRepo.getGoal(userId, "goal_occ_concurrent")!!
+        val writer2Goal = goalRepo.getGoal(userId, "goal_occ_concurrent")!!
 
         assertEquals(1L, writer1Goal.version)
         assertEquals(1L, writer2Goal.version)
@@ -401,7 +401,7 @@ class Phase2ARedTeamVerificationTest {
         assertTrue("Stale update MUST fail with OCC conflict", update2Result.isFailure)
 
         // Verify DB content matches Writer 1
-        val finalGoal = goalRepo.getGoal("goal_occ_concurrent")!!
+        val finalGoal = goalRepo.getGoal(userId, "goal_occ_concurrent")!!
         assertEquals(2L, finalGoal.version)
         assertEquals("Writer 1 edit", finalGoal.description)
     }

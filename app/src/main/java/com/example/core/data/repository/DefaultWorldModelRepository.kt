@@ -78,7 +78,7 @@ class DefaultWorldModelRepository(
     }
 
     override suspend fun saveCommitment(commitment: Commitment): Result<Unit> = runCatching {
-        val existing = commitmentDao.getCommitmentById(commitment.id)
+        val existing = commitmentDao.getCommitmentById(commitment.id, commitment.userId.value)
         if (existing == null) {
             commitmentDao.insertCommitment(commitment.toEntity())
         } else {
@@ -92,16 +92,16 @@ class DefaultWorldModelRepository(
         }
     }
 
-    override suspend fun deleteCommitment(id: String): Result<Unit> = runCatching {
-        commitmentDao.deleteCommitment(id)
+    override suspend fun deleteCommitment(userId: UserId, id: String): Result<Unit> = runCatching {
+        commitmentDao.deleteCommitment(id, userId.value)
     }
 
     override suspend fun saveWorldEntity(entity: WorldEntity): Result<Unit> = runCatching {
         entityDao.saveEntityWithAliases(entity.toEntity(), entity.aliases.toList())
     }
 
-    override suspend fun getEntity(canonicalId: String): WorldEntity? {
-        val entityRecord = entityDao.getEntityById(canonicalId) ?: return null
+    override suspend fun getEntity(userId: UserId, canonicalId: String): WorldEntity? {
+        val entityRecord = entityDao.getEntityById(canonicalId, userId.value) ?: return null
         val aliases = entityDao.getAliasesForEntity(canonicalId).map { it.alias }.toSet()
         return entityRecord.toDomain(aliases)
     }
@@ -114,7 +114,7 @@ class DefaultWorldModelRepository(
         return first.toDomain(aliases)
     }
 
-    override suspend fun deleteEntity(canonicalId: String): Result<Unit> = runCatching {
-        entityDao.deleteEntity(canonicalId)
+    override suspend fun deleteEntity(userId: UserId, canonicalId: String): Result<Unit> = runCatching {
+        entityDao.deleteEntity(canonicalId, userId.value)
     }
 }

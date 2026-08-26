@@ -11,25 +11,25 @@ import com.example.core.domain.world.model.WorldEntity
 import kotlinx.coroutines.flow.Flow
 
 interface GoalRepository {
-    suspend fun getGoal(id: String): Goal?
+    suspend fun getGoal(userId: UserId, id: String): Goal?
     fun observeActiveGoals(userId: UserId, limit: Int = 10): Flow<List<Goal>>
     suspend fun getGoalsByStatus(userId: UserId, status: GoalStatus): List<Goal>
     suspend fun getAllGoals(userId: UserId): List<Goal>
     suspend fun createGoal(goal: Goal): Result<Unit>
     suspend fun updateGoal(goal: Goal): Result<Unit>
-    suspend fun updateGoalProgress(goalId: String, progress: GoalProgress): Result<Goal>
-    suspend fun deleteGoal(id: String): Result<Unit>
+    suspend fun updateGoalProgress(userId: UserId, goalId: String, progress: GoalProgress): Result<Goal>
+    suspend fun deleteGoal(userId: UserId, id: String): Result<Unit>
 }
 
 interface ProjectRepository {
-    suspend fun getProject(id: String): Project?
+    suspend fun getProject(userId: UserId, id: String): Project?
     fun observeProjects(userId: UserId): Flow<List<Project>>
     suspend fun saveProject(project: Project): Result<Unit>
-    suspend fun linkGoalAndProject(goalId: String, projectId: String): Result<Unit>
-    suspend fun unlinkGoalAndProject(goalId: String, projectId: String): Result<Unit>
-    suspend fun getProjectsForGoal(goalId: String): List<Project>
-    suspend fun getGoalsForProject(projectId: String): List<Goal>
-    suspend fun deleteProject(id: String): Result<Unit>
+    suspend fun linkGoalAndProject(userId: UserId, goalId: String, projectId: String): Result<Unit>
+    suspend fun unlinkGoalAndProject(userId: UserId, goalId: String, projectId: String): Result<Unit>
+    suspend fun getProjectsForGoal(userId: UserId, goalId: String): List<Project>
+    suspend fun getGoalsForProject(userId: UserId, projectId: String): List<Goal>
+    suspend fun deleteProject(userId: UserId, id: String): Result<Unit>
 }
 
 /**
@@ -91,10 +91,10 @@ interface WorldModelRepository {
 
     suspend fun saveCommitment(commitment: Commitment): Result<Unit>
     fun observeUpcomingCommitments(userId: UserId, fromTimestamp: Long, limit: Int = 10): Flow<List<Commitment>>
-    suspend fun deleteCommitment(id: String): Result<Unit>
+    suspend fun deleteCommitment(userId: UserId, id: String): Result<Unit>
 
     suspend fun saveWorldEntity(entity: WorldEntity): Result<Unit>
-    suspend fun getEntity(canonicalId: String): WorldEntity?
+    suspend fun getEntity(userId: UserId, canonicalId: String): WorldEntity?
     suspend fun resolveEntity(userId: UserId, query: String): WorldEntity?
-    suspend fun deleteEntity(canonicalId: String): Result<Unit>
+    suspend fun deleteEntity(userId: UserId, canonicalId: String): Result<Unit>
 }

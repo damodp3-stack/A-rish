@@ -15,8 +15,8 @@ import com.example.core.data.local.entity.WorldEntityEntity
 @Dao
 interface WorldEntityDao {
 
-    @Query("SELECT * FROM world_entities WHERE canonical_id = :id")
-    suspend fun getEntityById(id: String): WorldEntityEntity?
+    @Query("SELECT * FROM world_entities WHERE canonical_id = :id AND user_id = :userId")
+    suspend fun getEntityById(id: String, userId: String): WorldEntityEntity?
 
     @Query("SELECT * FROM world_entities WHERE user_id = :userId AND type = :type")
     suspend fun getEntitiesByType(userId: String, type: String): List<WorldEntityEntity>
@@ -33,8 +33,8 @@ interface WorldEntityDao {
     @Update
     suspend fun updateEntity(entity: WorldEntityEntity): Int
 
-    @Query("DELETE FROM world_entities WHERE canonical_id = :id")
-    suspend fun deleteEntity(id: String): Int
+    @Query("DELETE FROM world_entities WHERE canonical_id = :id AND user_id = :userId")
+    suspend fun deleteEntity(id: String, userId: String): Int
 
     @Query("DELETE FROM entity_aliases WHERE canonical_id = :canonicalId")
     suspend fun deleteAliasesForEntity(canonicalId: String): Int

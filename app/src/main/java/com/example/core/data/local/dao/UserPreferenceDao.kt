@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UserPreferenceDao {
 
-    @Query("SELECT * FROM user_preferences WHERE id = :id")
-    suspend fun getPreferenceById(id: String): UserPreferenceEntity?
+    @Query("SELECT * FROM user_preferences WHERE id = :id AND user_id = :userId")
+    suspend fun getPreferenceById(id: String, userId: String): UserPreferenceEntity?
 
     @Query("SELECT * FROM user_preferences WHERE user_id = :userId ORDER BY domain ASC, preference_key ASC")
     fun getAllPreferences(userId: String): Flow<List<UserPreferenceEntity>>
@@ -35,8 +35,8 @@ interface UserPreferenceDao {
     @Update
     suspend fun updatePreference(preference: UserPreferenceEntity): Int
 
-    @Query("DELETE FROM user_preferences WHERE id = :id")
-    suspend fun deletePreference(id: String): Int
+    @Query("DELETE FROM user_preferences WHERE id = :id AND user_id = :userId")
+    suspend fun deletePreference(id: String, userId: String): Int
 
     @Query("DELETE FROM user_preferences WHERE user_id = :userId AND domain = :domain AND preference_key = :key")
     suspend fun deletePreferenceByKey(userId: String, domain: String, key: String): Int

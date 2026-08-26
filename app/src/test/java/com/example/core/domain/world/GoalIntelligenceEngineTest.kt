@@ -134,7 +134,7 @@ class GoalIntelligenceEngineTest {
         engine.proposeAndSaveGoal(proposal)
 
         val updatedGoal = engine.updateGoalProgress(
-            "engine_goal_progress",
+            userId, "engine_goal_progress",
             GoalProgress.DiscreteMilestones(totalMilestones = 2, completedMilestones = 2)
         ).getOrThrow()
 
