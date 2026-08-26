@@ -16,3 +16,15 @@
 local.properties
 .env
 debug.keystore
+debug.keystore.base64
+*.keystore
+*.jks
+*.base64
+.build-outputs/
+*.apk
+*.aab
+*.apks
+/app/build/
+.aistudio/
+assets/.aistudio/
+

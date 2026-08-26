@@ -675,18 +675,14 @@ class ArishPersistenceSafetyTest {
             val sqliteDb = db.openHelper.writableDatabase
             DatabaseMigrations.MIGRATION_1_2.migrate(sqliteDb)
 
-            // 1. Verify new index created
-            val cursor = sqliteDb.query("PRAGMA index_list('agent_events')")
-            var foundSessionIndex = false
-            while (cursor.moveToNext()) {
-                val indexName = cursor.getString(cursor.getColumnIndexOrThrow("name"))
-                if (indexName == "index_agent_events_session") {
-                    foundSessionIndex = true
-                    break
-                }
+            // 1. Verify new tables created
+            val tableCursor = sqliteDb.query("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('goals', 'projects', 'goal_project_links', 'commitments', 'user_preferences', 'world_entities', 'entity_aliases')")
+            val tablesFound = mutableSetOf<String>()
+            while (tableCursor.moveToNext()) {
+                tablesFound.add(tableCursor.getString(0))
             }
-            cursor.close()
-            assertTrue("MIGRATION_1_2 must create index_agent_events_session", foundSessionIndex)
+            tableCursor.close()
+            assertEquals("MIGRATION_1_2 must create all 7 Phase 2A tables", 7, tablesFound.size)
 
             // 2. Verify FTS table and searchability survive migration
             val searchResults = db.memoryDao().searchMemoriesLexical("persistence")
@@ -710,7 +706,14 @@ class ArishPersistenceSafetyTest {
             IdempotencyEntity::class.java,
             EvidenceEntity::class.java,
             MemoryEntity::class.java,
-            AgentEventEntity::class.java
+            AgentEventEntity::class.java,
+            com.example.core.data.local.entity.GoalEntity::class.java,
+            com.example.core.data.local.entity.ProjectEntity::class.java,
+            com.example.core.data.local.entity.GoalProjectLinkEntity::class.java,
+            com.example.core.data.local.entity.CommitmentEntity::class.java,
+            com.example.core.data.local.entity.UserPreferenceEntity::class.java,
+            com.example.core.data.local.entity.WorldEntityEntity::class.java,
+            com.example.core.data.local.entity.EntityAliasEntity::class.java
         )
 
         val forbiddenKeywords = listOf("api_key", "apikey", "password", "access_token", "refreshtoken", "secret_key")
